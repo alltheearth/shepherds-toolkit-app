@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+<<<<<<< HEAD
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import SermonEditorPage from './feature/SermonsEditorPage';
 import BiblePage from './feature/BiblePage';
@@ -36,3 +37,18 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
+=======
+import { Provider } from 'react-redux';
+// import { store } from './store';
+import './index.css'
+import App from './App.tsx'
+import store from './store/index.ts';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <Provider store={store}>
+      <App />
+    </Provider>
+  </StrictMode>,
+)
+>>>>>>> newDesing
