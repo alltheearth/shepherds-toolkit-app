@@ -1,13 +1,12 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { contatosApi } from '../services/contatosApi';
+import { configureStore } from "@reduxjs/toolkit";
+import ModuleActiveSlice from "../Feature/ModuleActiveSlice";
 
-export const store = configureStore({
-  reducer: {
-    [contatosApi.reducerPath]: contatosApi.reducer,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(contatosApi.middleware),
-});
+const store = configureStore({
+    reducer: {
+        moduleActive: ModuleActiveSlice,
+    },
+})
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+export default store;
