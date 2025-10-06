@@ -10,6 +10,7 @@ import Prayer from './components/Prayer';
 import Goals from './components/Goals';
 import Members from './components/Members';
 import Calendar from './components/Calendar';
+import Library from './components/Library';
 
 const ShepherdsToolkit = () => {
  
@@ -64,8 +65,8 @@ const ShepherdsToolkit = () => {
                   return <Finances />;
                 case 'prayer':
                   return <Prayer />;
-                // case 'library':
-                //   return <Library />;
+                case 'library':
+                  return <Library />;
                 default:
                   return <Dashboard />;
               }
