@@ -4,6 +4,7 @@ import {
   Sparkles, Search, BookOpen, ChevronLeft, ChevronRight,
   Menu, X, Heart, Bookmark, Share2, Settings
 } from 'lucide-react';
+import { useGetVersesQuery } from '../../feature/bible/bibleApi';
 
 const Bible = () => {
   const [selectedVerse, setSelectedVerse] = useState(null);
@@ -11,7 +12,14 @@ const Bible = () => {
   const [currentBook, setCurrentBook] = useState('João');
   const [currentChapter, setCurrentChapter] = useState(3);
   const [showAI, setShowAI] = useState(false);
+  
+  const [book, setBook] = useState('1');
+  const [chapter, setChapter] = useState('1');
+  const [version, setVersion] = useState('NVI');
 
+  // const { data, error, isLoading} = useGetVersesQuery({ book, chapter, version });
+  const { data} = useGetVersesQuery({ book, chapter, version });
+  console.log(data);
   // Dados simulados - em produção viriam de uma API
   const verses = [
     { id: 1, number: 1, text: "No princípio era o Verbo, e o Verbo estava com Deus, e o Verbo era Deus.", favorite: false, color: null },
