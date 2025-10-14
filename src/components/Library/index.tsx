@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { 
   BookOpen, Plus, Search, Filter, Download, Settings, Star,
   Eye, ChevronRight, Tag, Clock, Video, Headphones, X,
-  Book, BookMarked, Library, Layers, TrendingUp, Share2, Edit, Mic
+  Book, BookMarked, Library as LibraryIcon, Layers, TrendingUp, Share2, Edit, Mic
 } from 'lucide-react';
 
-const ShepherdsToolkitLibrary = () => {
+const Library = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [selectedResource, setSelectedResource] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -105,7 +105,7 @@ const ShepherdsToolkitLibrary = () => {
     if (type === 'book') return Book;
     if (type === 'video') return Video;
     if (type === 'audio') return Headphones;
-    return Library;
+    return LibraryIcon;
   };
 
   const getTypeName = (type) => {
@@ -390,4 +390,4 @@ const ShepherdsToolkitLibrary = () => {
   );
 };
 
-export default ShepherdsToolkitLibrary;
+export default Library;

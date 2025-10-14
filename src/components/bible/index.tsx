@@ -5,9 +5,11 @@ import {
   Menu, X, Heart, Bookmark, Share2, Settings
 } from 'lucide-react';
 import { useGetVersesQuery } from '../../feature/bible/bibleApi';
+import type { BibleVerse } from '../../types/bible.types';
+ import authService from '../../services/authService';
 
 const Bible = () => {
-  const [selectedVerse, setSelectedVerse] = useState(null);
+  const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentBook, setCurrentBook] = useState('João');
   const [currentChapter, setCurrentChapter] = useState(3);
@@ -18,17 +20,18 @@ const Bible = () => {
   const [version, setVersion] = useState('NVI');
 
   // const { data, error, isLoading} = useGetVersesQuery({ book, chapter, version });
-  const { data} = useGetVersesQuery({ book, chapter, version });
-  console.log(data);
-  // Dados simulados - em produção viriam de uma API
-  const verses = [
-    { id: 1, number: 1, text: "No princípio era o Verbo, e o Verbo estava com Deus, e o Verbo era Deus.", favorite: false, color: null },
-    { id: 2, number: 2, text: "Ele estava no princípio com Deus.", favorite: false, color: null },
-    { id: 3, number: 3, text: "Todas as coisas foram feitas por ele, e sem ele nada do que foi feito se fez.", favorite: true, color: 'yellow' },
-    { id: 16, number: 16, text: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.", favorite: true, color: 'green' },
-    { id: 17, number: 17, text: "Porque Deus enviou o seu Filho ao mundo, não para que condenasse o mundo, mas para que o mundo fosse salvo por ele.", favorite: false, color: null },
-    { id: 18, number: 18, text: "Quem crê nele não é condenado; mas quem não crê já está condenado, porquanto não crê no nome do unigênito Filho de Deus.", favorite: false, color: 'blue' },
-  ];
+  const {data : verses} = useGetVersesQuery({ book, chapter, version });
+  console.log(verses);
+
+
+  // const verses = [
+  //   { id: 1, number: 1, text: "No princípio era o Verbo, e o Verbo estava com Deus, e o Verbo era Deus.", favorite: false, color: null },
+  //   { id: 2, number: 2, text: "Ele estava no princípio com Deus.", favorite: false, color: null },
+  //   { id: 3, number: 3, text: "Todas as coisas foram feitas por ele, e sem ele nada do que foi feito se fez.", favorite: true, color: 'yellow' },
+  //   { id: 16, number: 16, text: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.", favorite: true, color: 'green' },
+  //   { id: 17, number: 17, text: "Porque Deus enviou o seu Filho ao mundo, não para que condenasse o mundo, mas para que o mundo fosse salvo por ele.", favorite: false, color: null },
+  //   { id: 18, number: 18, text: "Quem crê nele não é condenado; mas quem não crê já está condenado, porquanto não crê no nome do unigênito Filho de Deus.", favorite: false, color: 'blue' },
+  // ];
 
   const versions = [
     { id: 'acf', name: 'ACF', text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito...' },
@@ -57,6 +60,56 @@ const Bible = () => {
     setSidebarOpen(true);
     setShowAI(false);
   };
+
+  const handleColorSelect = async (color: string) => {
+         
+          const token = authService.getToken();
+
+    try {
+      const request = fetch('http://127.0.0.1:8000/api/bible/highlights/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Token ${token}` : '',
+      },
+      body: JSON.stringify({
+        "verse": selectedVerse?.id, "color": color, "is_favorite": selectedVerse?.user_highlight ? !selectedVerse?.user_highlight.is_favorite : false
+      })
+      
+      });
+      const response = await request;
+      const data = await response.json();
+      console.log('Verse highlighted:', data);
+
+    } catch (error) {
+      console.error('Error highlighting verse:', error);
+    }
+  };
+
+   const handleFavoriteVerse = async () => {
+         
+          const token = authService.getToken();
+
+    try {
+      const request = fetch('http://127.0.0.1:8000/api/bible/highlights/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Token ${token}` : '',
+      },
+      body: JSON.stringify({
+        "verse": selectedVerse?.id, "color": selectedVerse?.user_highlight?.color , "is_favorite": selectedVerse?.user_highlight?.is_favorite? false :  true
+      })
+      
+      });
+      const response = await request;
+      const data = await response.json();
+
+    } catch (error) {
+      console.error('Error highlighting verse:', error);
+    }
+  };
+
 
   const getVerseColor = (color) => {
     const colors = {
@@ -136,25 +189,25 @@ const Bible = () => {
               </h2>
 
               <div className="space-y-4 text-lg leading-relaxed">
-                {verses.map((verse) => (
+                {verses?.results.map((verse) => (
                   <div
                     key={verse.id}
                     onClick={() => handleVerseClick(verse)}
                     className={`p-4 rounded-lg cursor-pointer transition-all hover:shadow-md border-2 ${
                       selectedVerse?.id === verse.id 
                         ? 'border-purple-500 bg-purple-50' 
-                        : verse.color 
-                        ? `${getVerseColor(verse.color)} border-l-4`
+                        : verse.user_highlight?.color
+                        ? `${getVerseColor(verse.user_highlight?.color)} border-l-4`
                         : 'border-transparent hover:bg-gray-50'
                     }`}
                   >
                     <span className="inline-flex items-start gap-3">
                       <span className="font-bold text-purple-600 text-sm mt-1">
-                        {verse.number}
+                        {verse.verse}
                       </span>
                       <span className="text-gray-700 flex-1">
                         {verse.text}
-                        {verse.favorite && (
+                        {verse.user_highlight?.is_favorite && (
                           <Star className="inline ml-2 text-yellow-500 fill-yellow-500" size={16} />
                         )}
                       </span>
@@ -205,7 +258,7 @@ const Bible = () => {
               <div className="mb-6">
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">Ações Rápidas</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="flex items-center gap-2 px-3 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded-lg transition-colors text-sm">
+                  <button className="flex items-center gap-2 px-3 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded-lg transition-colors text-sm" onClick={handleFavoriteVerse}>
                     <Star size={16} />
                     <span>Favoritar</span>
                   </button>
@@ -236,6 +289,9 @@ const Bible = () => {
                       key={option.value}
                       className={`w-10 h-10 ${option.color} rounded-lg hover:ring-2 ring-gray-400 transition-all`}
                       title={option.name}
+                      onClick={() => 
+                        handleColorSelect(option.value)
+                      }   
                     />
                   ))}
                   <button className="w-10 h-10 bg-gray-200 rounded-lg hover:ring-2 ring-gray-400 transition-all flex items-center justify-center">

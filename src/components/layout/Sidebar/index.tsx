@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store";
 
 const Sidebar = () => {
-    
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const activeModule = useSelector((state: any) => state.moduleActive.activeModule);

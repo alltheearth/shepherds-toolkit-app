@@ -1,22 +1,12 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
-// Tipos do retorno da API
-export interface Verse {
-  id: number;
-  book: number;
-  book_name: string;
-  chapter: number;
-  verse: number;
-  text: string;
-  version: string;
-  reference: string;
-}
+import authService from '../../services/authService';
+import type { BibleVerse } from '../../types/bible.types';
 
 export interface VerseResponse {
   count: number;
   next: string | null;
   previous: string | null;
-  results: Verse[];
+  results: BibleVerse[];
 }
 
 // Parâmetros da query
@@ -27,17 +17,28 @@ export interface VerseQueryParams {
   page?: number;
 }
 
+// Configuração correta com prepareHeaders
 export const bibleApi = createApi({
   reducerPath: 'bibleApi',
   baseQuery: fetchBaseQuery({
     baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+    prepareHeaders: (headers) => {
+      const token = authService.getToken();
+
+      if (token) {
+        headers.set('Authorization', `Token ${token}`);
+      }
+
+      return headers;
+    },
   }),
   endpoints: (builder) => ({
     getVerses: builder.query<VerseResponse, VerseQueryParams>({
       query: ({ book, chapter, version, page = 1 }) =>
-        `/bible/verses/?book=${book}&chapter=${chapter}&version=${version}`,
+        `/bible/verses/?book=${book}&chapter=${chapter}&version=${version}&page=${page}`,
     }),
   }),
 });
 
 export const { useGetVersesQuery } = bibleApi;
+export default bibleApi;
