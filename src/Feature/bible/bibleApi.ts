@@ -1,6 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import authService from '../../services/authService';
-import type { BibleVerse } from '../../types/bible.types';
+import type { BibleBook, BibleVerse, HighlightColor } from '../../types/bible.types';
+
+export interface BooksResponse  { 
+  
+    "count": 66,
+    "next": null,
+    "previous": null,
+    "results": BibleBook[]
+}
 
 export interface VerseResponse {
   count: number;
@@ -17,11 +25,18 @@ export interface VerseQueryParams {
   page?: number;
 }
 
+export interface HighlightPayload  {
+  verse: string | number;
+  color?: HighlightColor;
+  is_favorite?: boolean;
+}
+
+
 // Configuração correta com prepareHeaders
 export const bibleApi = createApi({
   reducerPath: 'bibleApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+    baseUrl: import.meta.env.VITE_API_URL,
     prepareHeaders: (headers) => {
       const token = authService.getToken();
 
@@ -33,12 +48,37 @@ export const bibleApi = createApi({
     },
   }),
   endpoints: (builder) => ({
+    getBooks: builder.query<BooksResponse, void>({
+      query: () => `/bible/books/`,
+    }),
     getVerses: builder.query<VerseResponse, VerseQueryParams>({
       query: ({ book, chapter, version, page = 1 }) =>
         `/bible/verses/?book=${book}&chapter=${chapter}&version=${version}&page=${page}`,
     }),
+     highlightVerse: builder.mutation<any, HighlightPayload>({
+      query: (payload) => ({
+        url: `/bible/highlights/`,
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    // 🟠 Novo endpoint: favoritar/desfavoritar
+    toggleFavorite: builder.mutation<any, HighlightPayload>({
+      query: (payload) => ({
+        url: `/bible/highlights/`,
+        method: 'POST',
+        body: payload,
+      }),
+    }),
   }),
 });
 
-export const { useGetVersesQuery } = bibleApi;
+export const {
+  useGetBooksQuery,
+  useGetVersesQuery,
+  useHighlightVerseMutation,
+  useToggleFavoriteMutation,
+} = bibleApi;
+
 export default bibleApi;

@@ -4,13 +4,12 @@ import {
   Sparkles, Search, BookOpen, ChevronLeft, ChevronRight,
   Menu, X, Heart, Bookmark, Share2, Settings
 } from 'lucide-react';
-import { useGetVersesQuery } from '../../feature/bible/bibleApi';
-import type { BibleVerse } from '../../types/bible.types';
- import authService from '../../services/authService';
+import { useGetBooksQuery, useGetVersesQuery, useHighlightVerseMutation, useToggleFavoriteMutation } from '../../feature/bible/bibleApi';
+import type { BibleVerse, HighlightColor } from '../../types/bible.types';
 
 const Bible = () => {
   const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentBook, setCurrentBook] = useState('João');
   const [currentChapter, setCurrentChapter] = useState(3);
   const [showAI, setShowAI] = useState(false);
@@ -20,9 +19,8 @@ const Bible = () => {
   const [version, setVersion] = useState('NVI');
 
   // const { data, error, isLoading} = useGetVersesQuery({ book, chapter, version });
-  const {data : verses} = useGetVersesQuery({ book, chapter, version });
-  console.log(verses);
-
+  const {data : verses } = useGetVersesQuery({ book, chapter, version });
+  const {data : books } = useGetBooksQuery();
 
   // const verses = [
   //   { id: 1, number: 1, text: "No princípio era o Verbo, e o Verbo estava com Deus, e o Verbo era Deus.", favorite: false, color: null },
@@ -48,70 +46,15 @@ const Bible = () => {
     { name: 'Roxo', color: 'bg-purple-200', value: 'purple' },
   ];
 
-  const books = [
-    'Gênesis', 'Êxodo', 'Levítico', 'Números', 'Deuteronômio',
-    'Josué', 'Juízes', 'Rute', '1 Samuel', '2 Samuel',
-    'Mateus', 'Marcos', 'Lucas', 'João', 'Atos',
-    'Romanos', '1 Coríntios', '2 Coríntios', 'Gálatas'
-  ];
 
-  const handleVerseClick = (verse) => {
+  
+  const handleVerseClick = (verse: BibleVerse) => {
     setSelectedVerse(verse);
     setSidebarOpen(true);
     setShowAI(false);
   };
 
-  const handleColorSelect = async (color: string) => {
-         
-          const token = authService.getToken();
-
-    try {
-      const request = fetch('http://127.0.0.1:8000/api/bible/highlights/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Token ${token}` : '',
-      },
-      body: JSON.stringify({
-        "verse": selectedVerse?.id, "color": color, "is_favorite": selectedVerse?.user_highlight ? !selectedVerse?.user_highlight.is_favorite : false
-      })
-      
-      });
-      const response = await request;
-      const data = await response.json();
-      console.log('Verse highlighted:', data);
-
-    } catch (error) {
-      console.error('Error highlighting verse:', error);
-    }
-  };
-
-   const handleFavoriteVerse = async () => {
-         
-          const token = authService.getToken();
-
-    try {
-      const request = fetch('http://127.0.0.1:8000/api/bible/highlights/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Token ${token}` : '',
-      },
-      body: JSON.stringify({
-        "verse": selectedVerse?.id, "color": selectedVerse?.user_highlight?.color , "is_favorite": selectedVerse?.user_highlight?.is_favorite? false :  true
-      })
-      
-      });
-      const response = await request;
-      const data = await response.json();
-
-    } catch (error) {
-      console.error('Error highlighting verse:', error);
-    }
-  };
-
-
-  const getVerseColor = (color) => {
+  const getVerseColor = (color: HighlightColor) => {
     const colors = {
       yellow: 'bg-yellow-100 border-yellow-300',
       green: 'bg-green-100 border-green-300',
@@ -119,7 +62,47 @@ const Bible = () => {
       pink: 'bg-pink-100 border-pink-300',
       purple: 'bg-purple-100 border-purple-300',
     };
-    return colors[color] || '';
+    if (!color) return '';
+    return colors[color];
+  };
+
+  const [toggleFavorite] = useToggleFavoriteMutation();
+  const [highlightVerse] = useHighlightVerseMutation();
+
+  const handleFavoriteClick = async () => {
+    if (!selectedVerse) return;
+
+    try {
+      const payload = {
+  verse: selectedVerse.id,
+  color: (selectedVerse.user_highlight?.color ) as HighlightColor,
+  is_favorite: !selectedVerse.user_highlight?.is_favorite,
+};
+
+     
+      await toggleFavorite(payload).unwrap();
+      
+      console.log('⭐ Favorito atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao favoritar versículo:', error);
+    }
+  };
+
+   const handleHighlight = async (color: HighlightColor) => {
+    if (!selectedVerse) return;
+
+    try {
+      const payload = {
+        verse: selectedVerse.id,
+        color,
+        is_favorite: selectedVerse.user_highlight?.is_favorite ?? false,
+      };
+
+      await highlightVerse(payload).unwrap();
+      console.log(`Verso ${selectedVerse.id} marcado com a cor ${color}`);
+    } catch (error) {
+      console.error('Erro ao marcar versículo:', error);
+    }
   };
 
   return (
@@ -158,19 +141,19 @@ const Bible = () => {
               </button>
 
               <div className="flex items-center gap-3 flex-1">
-                <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
-                  {books.map(book => (
-                    <option key={book} value={book}>{book}</option>
+                <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" value={book} onChange={(e) => setBook(e.target.value)}>
+                  {books?.results.map(book => (
+                    <option key={book.name} value={book.id}>{book.name}</option>
                   ))}
                 </select>
 
-                <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
-                  {[...Array(21)].map((_, i) => (
+                <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" value={chapter} onChange={(e) => setChapter(e.target.value)}>
+                  {[...Array(books?.results.find(item => item.id === parseInt(book))?.total_chapters)].map((_, i) => (
                     <option key={i + 1} value={i + 1}>Capítulo {i + 1}</option>
                   ))}
                 </select>
 
-                <span className="text-gray-600 font-medium">{currentBook} {currentChapter}</span>
+                <span className="text-gray-600 font-medium">{verses?.results[0].version}</span>
               </div>
 
               <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -185,7 +168,7 @@ const Bible = () => {
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow-lg p-8 md:p-12">
               <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-                {currentBook} {currentChapter}
+                {verses?.results[0].book_name} {verses?.results[0].chapter}
               </h2>
 
               <div className="space-y-4 text-lg leading-relaxed">
@@ -248,7 +231,7 @@ const Bible = () => {
                 </button>
               </div>
               <p className="text-sm text-gray-600">
-                {currentBook} {currentChapter}:{selectedVerse.number}
+                {currentBook} {currentChapter}:{selectedVerse.verse} - {selectedVerse.text}
               </p>
             </div>
 
@@ -258,7 +241,7 @@ const Bible = () => {
               <div className="mb-6">
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">Ações Rápidas</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="flex items-center gap-2 px-3 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded-lg transition-colors text-sm" onClick={handleFavoriteVerse}>
+                  <button className="flex items-center gap-2 px-3 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded-lg transition-colors text-sm" onClick={ handleFavoriteClick}>
                     <Star size={16} />
                     <span>Favoritar</span>
                   </button>
@@ -290,7 +273,7 @@ const Bible = () => {
                       className={`w-10 h-10 ${option.color} rounded-lg hover:ring-2 ring-gray-400 transition-all`}
                       title={option.name}
                       onClick={() => 
-                        handleColorSelect(option.value)
+                        handleHighlight(option.value as HighlightColor)
                       }   
                     />
                   ))}

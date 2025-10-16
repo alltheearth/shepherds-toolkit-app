@@ -3,10 +3,12 @@ import { useState } from "react";
 import { setActiveModule } from "../../../Feature/ModuleActiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store";
+import { useNavigate } from "react-router-dom";
+import { setShowProfile } from "../../../feature/ShowProfile";
 
 const Sidebar = () => {
+    const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-
     const activeModule = useSelector((state: any) => state.moduleActive.activeModule);
     const dispatch = useDispatch<AppDispatch>()
 
@@ -22,6 +24,17 @@ const Sidebar = () => {
     { id: 'library', name: 'Biblioteca', icon: BookOpen, color: 'bg-amber-500' },
     ];
 
+  // Perfil do usuário (editável)
+  const userProfile ={
+    name: 'Pastor João Silva',
+    email: 'pastor.joao@igrejacentral.com',
+    phone: '(11) 98765-4321',
+    church: 'Igreja Central',
+    role: 'Pastor Principal',
+    address: 'São Paulo, SP',
+    since: '2018',
+    bio: 'Servo de Deus, apaixonado por ensinar e pastorear o rebanho do Senhor.'
+  };
 
     return (
         <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gradient-to-b from-slate-800 to-slate-900 text-white transition-all duration-300 flex flex-col shadow-xl`}>
@@ -48,7 +61,7 @@ const Sidebar = () => {
             return (
               <button
                 key={module.id}
-                onClick={() => dispatch(setActiveModule(module.id))}
+                onClick={() => {dispatch( setActiveModule(module.id)); navigate(`/${module.id}`)}}
                 className={`w-full flex items-center gap-3 px-6 py-3 hover:bg-slate-700 transition-colors ${
                   activeModule === module.id ? 'bg-slate-700 border-l-4 border-blue-500' : ''
                 }`}
@@ -60,19 +73,22 @@ const Sidebar = () => {
           })}
         </nav>
 
-        {/* User Section */}
+        {/* User Section - CLICÁVEL */}
         <div className="p-4 border-t border-slate-700">
-          <div className={`flex items-center gap-3 ${!sidebarOpen && 'justify-center'}`}>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+          <button
+            onClick={() => dispatch(setShowProfile(true))}
+            className={`w-full flex items-center gap-3 p-2 hover:bg-slate-700 rounded-lg transition-colors ${!sidebarOpen && 'justify-center'}`}
+          >
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
               <User size={20} />
             </div>
             {sidebarOpen && (
-              <div className="flex-1">
-                <p className="text-sm font-medium">Pastor João</p>
-                <p className="text-xs text-slate-400">Igreja Central</p>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-medium">{userProfile.name.split(' ')[0]} {userProfile.name.split(' ')[1]}</p>
+                <p className="text-xs text-slate-400">{userProfile.church}</p>
               </div>
             )}
-          </div>
+          </button>
         </div>
       </aside>
     )

@@ -1,10 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
-import ModuleActiveSlice from "../Feature/ModuleActiveSlice";
-import { bibleApi } from "../feature/bible/bibleApi";
+
+import setShowProfileSlice from "../feature/ShowProfile";
+import bibleApi from "../feature/bible/bibleApi";
+import ModuleActiveSlice from "../Feature/ModuleActiveSlice"
+
 
 const store = configureStore({
     reducer: {
         moduleActive: ModuleActiveSlice,
+        showProfile: setShowProfileSlice,
         [bibleApi.reducerPath]: bibleApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
