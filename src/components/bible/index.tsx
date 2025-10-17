@@ -4,10 +4,13 @@ import {
   Sparkles, Search, BookOpen, ChevronLeft, ChevronRight,
   Menu, X, Heart, Bookmark, Share2, Settings
 } from 'lucide-react';
-import { useGetBooksQuery, useGetVersesQuery, useHighlightVerseMutation, useToggleFavoriteMutation } from '../../feature/bible/bibleApi';
+import bibleApi, { useGetBooksQuery, useGetVersesQuery, useHighlightVerseMutation, useToggleFavoriteMutation } from '../../feature/bible/bibleApi';
 import type { BibleVerse, HighlightColor } from '../../types/bible.types';
+import { useDispatch } from 'react-redux';
+import { type AppDispatch } from '../../store';
 
 const Bible = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentBook, setCurrentBook] = useState('João');
@@ -18,18 +21,9 @@ const Bible = () => {
   const [chapter, setChapter] = useState('1');
   const [version, setVersion] = useState('NVI');
 
-  // const { data, error, isLoading} = useGetVersesQuery({ book, chapter, version });
   const {data : verses } = useGetVersesQuery({ book, chapter, version });
+  console.log(verses);
   const {data : books } = useGetBooksQuery();
-
-  // const verses = [
-  //   { id: 1, number: 1, text: "No princípio era o Verbo, e o Verbo estava com Deus, e o Verbo era Deus.", favorite: false, color: null },
-  //   { id: 2, number: 2, text: "Ele estava no princípio com Deus.", favorite: false, color: null },
-  //   { id: 3, number: 3, text: "Todas as coisas foram feitas por ele, e sem ele nada do que foi feito se fez.", favorite: true, color: 'yellow' },
-  //   { id: 16, number: 16, text: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.", favorite: true, color: 'green' },
-  //   { id: 17, number: 17, text: "Porque Deus enviou o seu Filho ao mundo, não para que condenasse o mundo, mas para que o mundo fosse salvo por ele.", favorite: false, color: null },
-  //   { id: 18, number: 18, text: "Quem crê nele não é condenado; mas quem não crê já está condenado, porquanto não crê no nome do unigênito Filho de Deus.", favorite: false, color: 'blue' },
-  // ];
 
   const versions = [
     { id: 'acf', name: 'ACF', text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito...' },
@@ -69,41 +63,76 @@ const Bible = () => {
   const [toggleFavorite] = useToggleFavoriteMutation();
   const [highlightVerse] = useHighlightVerseMutation();
 
-  const handleFavoriteClick = async () => {
+const handleFavoriteClick = async () => {
     if (!selectedVerse) return;
 
-    try {
-      const payload = {
-  verse: selectedVerse.id,
-  color: (selectedVerse.user_highlight?.color ) as HighlightColor,
-  is_favorite: !selectedVerse.user_highlight?.is_favorite,
-};
+    const payload = {
+      verse: selectedVerse.id,
+      color: selectedVerse.user_highlight?.color as HighlightColor,
+      is_favorite: !selectedVerse.user_highlight?.is_favorite,
+    };
 
-     
+    try {
+      // Atualização otimista no cache
+      dispatch(
+        bibleApi.util.updateQueryData(
+          'getVerses',
+          { book, chapter, version },
+          (draft) => {
+            const verse = draft.results.find((v) => v.id === selectedVerse.id);
+            if (verse?.user_highlight) {
+              verse.user_highlight.is_favorite = !verse.user_highlight.is_favorite;
+            }
+          }
+        )
+      );
+
+      // Atualiza no servidor
       await toggleFavorite(payload).unwrap();
-      
+
       console.log('⭐ Favorito atualizado com sucesso!');
     } catch (error) {
       console.error('Erro ao favoritar versículo:', error);
     }
   };
 
+
    const handleHighlight = async (color: HighlightColor) => {
-    if (!selectedVerse) return;
+  if (!selectedVerse) return;
 
-    try {
-      const payload = {
-        verse: selectedVerse.id,
-        color,
-        is_favorite: selectedVerse.user_highlight?.is_favorite ?? false,
-      };
-
-      await highlightVerse(payload).unwrap();
-      console.log(`Verso ${selectedVerse.id} marcado com a cor ${color}`);
-    } catch (error) {
-      console.error('Erro ao marcar versículo:', error);
-    }
+  const payload = {
+    verse: selectedVerse.id,
+    color,
+    is_favorite: selectedVerse.user_highlight?.is_favorite ?? false,
   };
+
+  try {
+    // 🟢 Atualização otimista no cache local
+    dispatch(
+      bibleApi.util.updateQueryData(
+        'getVerses',
+        { book, chapter, version },
+        (draft) => {
+          const verse = draft.results.find(v => v.id === selectedVerse.id);
+          if (verse) {
+            verse.user_highlight = {
+              id: verse.user_highlight?.id ?? (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)),
+              color,
+              is_favorite: payload.is_favorite,
+              created_at: verse.user_highlight?.created_at ?? new Date().toISOString(),
+            };
+          }
+        }
+      )
+    );
+
+    // 🟢 Envia pro backend (com RTK mutation)
+    await highlightVerse(payload).unwrap();
+
+  } catch (err) {
+    console.error('Erro ao aplicar destaque:', err);
+  }
+};
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -277,7 +306,7 @@ const Bible = () => {
                       }   
                     />
                   ))}
-                  <button className="w-10 h-10 bg-gray-200 rounded-lg hover:ring-2 ring-gray-400 transition-all flex items-center justify-center">
+                  <button className="w-10 h-10 bg-gray-200 rounded-lg hover:ring-2 ring-gray-400 transition-all flex items-center justify-center" onClick={() => handleHighlight("")}>
                     <X size={16} className="text-gray-600" />
                   </button>
                 </div>
