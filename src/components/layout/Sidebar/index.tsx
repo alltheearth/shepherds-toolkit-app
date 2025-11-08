@@ -1,4 +1,4 @@
-import { Book, BookOpen, Calendar, DollarSign, FileText, Heart, Menu, Target, User, Users, X } from "lucide-react";
+import { Book, BookMarked, BookOpen, Calendar, DollarSign, FileText, Heart, Menu, Target, User, Users, X } from "lucide-react";
 import { useState } from "react";
 import { setActiveModule } from "../../../Feature/ModuleActiveSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,6 +15,7 @@ const Sidebar = () => {
     const modules = [
     { id: 'dashboard', name: 'Dashboard', icon: Menu, color: 'bg-blue-500' },
     { id: 'bible', name: 'Bíblia', icon: Book, color: 'bg-purple-500' },
+    { id: 'reading-plan', name: 'Plano de Leitura', icon: BookMarked, color: 'bg-teal-500' }, 
     { id: 'sermons', name: 'Sermões', icon: FileText, color: 'bg-green-500' },
     { id: 'goals', name: 'Metas', icon: Target, color: 'bg-orange-500' },
     { id: 'calendar', name: 'Agenda', icon: Calendar, color: 'bg-pink-500' },

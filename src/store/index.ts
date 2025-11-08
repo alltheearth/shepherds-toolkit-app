@@ -3,6 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import setShowProfileSlice from "../feature/ShowProfile";
 import bibleApi from "../feature/bible/bibleApi";
 import ModuleActiveSlice from "../Feature/ModuleActiveSlice"
+import readingPlanApi from "../feature/readingPlan/readingPlanApi";
 
 
 const store = configureStore({
@@ -10,9 +11,11 @@ const store = configureStore({
         moduleActive: ModuleActiveSlice,
         showProfile: setShowProfileSlice,
         [bibleApi.reducerPath]: bibleApi.reducer,
+        [readingPlanApi.reducerPath]: readingPlanApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(bibleApi.middleware),
+    getDefaultMiddleware().concat(bibleApi.middleware)
+    .concat(readingPlanApi.middleware), 
 })
 
 export type RootState = ReturnType<typeof store.getState>;

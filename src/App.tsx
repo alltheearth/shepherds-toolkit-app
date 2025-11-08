@@ -17,6 +17,7 @@ import Prayer from './components/Prayer';
 import Library from './components/Library';
 import Auth from './components/Auth';
 import MainLayout from './components/layout/MainLayout';
+import ReadingPlan from './components/ReadingPlan';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
           >
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="/bible" element={<Bible />} />
+            <Route path="/reading-plan" element={<ReadingPlan />} />
             <Route path="sermons" element={<Sermons />} />
             <Route path="goals" element={<Goals />} />
             <Route path="calendar" element={<Calendar />} />
