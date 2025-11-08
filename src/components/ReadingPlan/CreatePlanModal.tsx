@@ -3,6 +3,7 @@
 import React from 'react';
 import { X, BookOpen, Calendar, Check } from 'lucide-react';
 import { useGetPlanTemplatesQuery, useCreatePlanMutation } from '../../feature/readingPlan/readingPlanApi';
+import { useMockPlanTemplates } from '../../mocks/readingPlanTemplates';
 import type { PlanTemplate } from '../../types/readingPlan.types';
 
 interface CreatePlanModalProps {
@@ -19,7 +20,12 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onSu
     new Date().toISOString().split('T')[0]
   );
 
-  const { data: templates, isLoading } = useGetPlanTemplatesQuery();
+  const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+  
+  const { data: templates, isLoading } = USE_MOCK 
+    ? useMockPlanTemplates()
+    : useGetPlanTemplatesQuery();
+    
   const [createPlan, { isLoading: isCreating }] = useCreatePlanMutation();
 
   const handleTemplateSelect = (template: PlanTemplate) => {
