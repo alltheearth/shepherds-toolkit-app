@@ -1,4 +1,4 @@
-// src/components/ReadingPlan/index.tsx - VERSÃO COMPLETA E FUNCIONAL
+// src/components/ReadingPlan/index.tsx - VERSÃO CORRIGIDA
 
 import React, { useState } from 'react';
 import { 
@@ -26,9 +26,14 @@ const ReadingPlanComponent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'today' | 'plans' | 'calendar' | 'history'>('today');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  
+  // ✅ CORREÇÃO CRÍTICA: Inicializar com YYYY-MM
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  });
 
   const { data: plans, isLoading: plansLoading, refetch: refetchPlans } = useGetMyPlansQuery();
   const activePlan = plans?.find(p => p.is_active);
@@ -52,7 +57,7 @@ const ReadingPlanComponent: React.FC = () => {
   const [updateStatus, { isLoading: isUpdating }] = useUpdateReadingStatusMutation();
   const [deletePlan] = useDeletePlanMutation();
 
-const handleStatusChange = async (status: 'completed' | 'skipped') => {
+  const handleStatusChange = async (status: 'completed' | 'skipped') => {
     if (!todayReading) return;
 
     try {
@@ -61,7 +66,6 @@ const handleStatusChange = async (status: 'completed' | 'skipped') => {
         status,
       }).unwrap();
       
-      // Refetch para atualizar os dados
       refetchPlans();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
@@ -91,6 +95,13 @@ const handleStatusChange = async (status: 'completed' | 'skipped') => {
       const firstRef = reading.readings[0].reference;
       navigate(`/bible?ref=${encodeURIComponent(firstRef)}`);
     }
+  };
+
+  // ✅ Handler para mudança de mês (garante formato YYYY-MM)
+  const handleMonthChange = (newMonth: string) => {
+    const formattedMonth = newMonth.substring(0, 7); // Garante YYYY-MM
+    console.log('📅 Mudando mês para:', formattedMonth);
+    setSelectedMonth(formattedMonth);
   };
 
   return (
@@ -307,7 +318,7 @@ const handleStatusChange = async (status: 'completed' | 'skipped') => {
                 planId={currentPlanId!}
                 readings={historyReadings || []}
                 onDayClick={handleReadingClick}
-                onMonthChange={setSelectedMonth}
+                onMonthChange={handleMonthChange}
               />
             )}
           </div>
