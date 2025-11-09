@@ -27,25 +27,25 @@ export const readingPlanApi = createApi({
   endpoints: (builder) => ({
     // ✅ Listar templates disponíveis
     getPlanTemplates: builder.query<PlanTemplate[], void>({
-      query: () => '/reading-plans/templates/',
+      query: () => '/api/reading-plans/templates/',
     }),
 
-    // ✅ Listar planos do usuário
+    // ✅ Listar planos do usuário  
     getMyPlans: builder.query<ReadingPlan[], void>({
-      query: () => '/reading-plans/my-plans/',
+      query: () => '/api/reading-plans/my-plans/',
       providesTags: ['ReadingPlans'],
     }),
 
     // ✅ Obter plano específico
     getPlan: builder.query<ReadingPlan, string>({
-      query: (id) => `/reading-plans/${id}/`,
+      query: (id) => `/api/reading-plans/${id}/`,
       providesTags: ['ReadingPlans'],
     }),
 
     // ✅ Criar novo plano
     createPlan: builder.mutation<ReadingPlan, CreatePlanPayload>({
       query: (payload) => ({
-        url: '/reading-plans/create/',
+        url: '/api/reading-plans/create_plan/',
         method: 'POST',
         body: payload,
       }),
@@ -54,14 +54,14 @@ export const readingPlanApi = createApi({
 
     // ✅ Obter leitura do dia
     getTodayReading: builder.query<ReadingDay, string>({
-      query: (planId) => `/reading-plans/${planId}/today/`,
+      query: (planId) => `/api/reading-plans/${planId}/today/`,
       providesTags: ['ReadingDays'],
     }),
 
     // ✅ Marcar leitura como completa/pendente
     updateReadingStatus: builder.mutation<ReadingDay, UpdateReadingPayload>({
       query: ({ reading_day_id, ...payload }) => ({
-        url: `/reading-plans/readings/${reading_day_id}/`,
+        url: `/api/reading-days/${reading_day_id}/`,
         method: 'PATCH',
         body: payload,
       }),
@@ -71,7 +71,7 @@ export const readingPlanApi = createApi({
     // ✅ Obter histórico de leituras
     getReadingHistory: builder.query<ReadingDay[], { planId: string; month?: string }>({
       query: ({ planId, month }) => ({
-        url: `/reading-plans/${planId}/history/`,
+        url: `/api/reading-plans/${planId}/history/`,
         params: month ? { month } : undefined,
       }),
       providesTags: ['ReadingDays'],
@@ -79,14 +79,14 @@ export const readingPlanApi = createApi({
 
     // ✅ Obter estatísticas
     getReadingStats: builder.query<ReadingStats, string>({
-      query: (planId) => `/reading-plans/${planId}/stats/`,
+      query: (planId) => `/api/reading-plans/${planId}/stats/`,
       providesTags: ['Stats'],
     }),
 
     // ✅ Deletar plano
     deletePlan: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/reading-plans/${id}/`,
+        url: `/api/reading-plans/${id}/`,
         method: 'DELETE',
       }),
       invalidatesTags: ['ReadingPlans'],
