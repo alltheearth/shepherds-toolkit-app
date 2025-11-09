@@ -1,10 +1,17 @@
+// src/components/bible/index.tsx - VERSÃO COMPLETA COM NAVEGAÇÃO
+
 import React, { useState } from 'react';
 import { 
   Book, ChevronDown, Star, Palette, MessageSquare, Copy, 
   Sparkles, Search, BookOpen, ChevronLeft, ChevronRight,
-  Menu, X, Heart, Bookmark, Share2, Settings
+  X, Share2, Settings, Bookmark
 } from 'lucide-react';
-import bibleApi, { useGetBooksQuery, useGetVersesQuery, useHighlightVerseMutation, useToggleFavoriteMutation } from '../../feature/bible/bibleApi';
+import bibleApi, { 
+  useGetBooksQuery, 
+  useGetVersesQuery, 
+  useHighlightVerseMutation, 
+  useToggleFavoriteMutation 
+} from '../../feature/bible/bibleApi';
 import type { BibleVerse, HighlightColor } from '../../types/bible.types';
 import { useDispatch } from 'react-redux';
 import { type AppDispatch } from '../../store';
@@ -13,23 +20,23 @@ const Bible = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [selectedVerse, setSelectedVerse] = useState<BibleVerse | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentBook, setCurrentBook] = useState('João');
-  const [currentChapter, setCurrentChapter] = useState(3);
   const [showAI, setShowAI] = useState(false);
   
   const [book, setBook] = useState('1');
   const [chapter, setChapter] = useState('1');
   const [version, setVersion] = useState('NVI');
 
-  const {data : verses } = useGetVersesQuery({ book, chapter, version });
-  console.log(verses);
-  const {data : books } = useGetBooksQuery();
+  const { data: verses } = useGetVersesQuery({ book, chapter, version });
+  const { data: books } = useGetBooksQuery();
+  
+  // ✅ NOVO: Extrair dados de navegação
+  const navigation = verses?.chapter_navigation;
 
   const versions = [
-    { id: 'acf', name: 'ACF', text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito...' },
-    { id: 'nvi', name: 'NVI', text: 'Porque Deus tanto amou o mundo que deu o seu Filho Unigênito...' },
-    { id: 'ara', name: 'ARA', text: 'Porque Deus amou ao mundo de tal maneira que deu o seu Filho unigênito...' },
-    { id: 'ntlh', name: 'NTLH', text: 'Porque Deus amou o mundo tanto, que deu o seu único Filho...' },
+    { id: 'ACF', name: 'ACF', text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito...' },
+    { id: 'NVI', name: 'NVI', text: 'Porque Deus tanto amou o mundo que deu o seu Filho Unigênito...' },
+    { id: 'ARA', name: 'ARA', text: 'Porque Deus amou ao mundo de tal maneira que deu o seu Filho unigênito...' },
+    { id: 'NTLH', name: 'NTLH', text: 'Porque Deus amou o mundo tanto, que deu o seu único Filho...' },
   ];
 
   const colorOptions = [
@@ -40,8 +47,27 @@ const Bible = () => {
     { name: 'Roxo', color: 'bg-purple-200', value: 'purple' },
   ];
 
+  // ✅ NOVO: Funções de navegação
+  const handlePreviousChapter = () => {
+    if (navigation?.previous) {
+      const prevBook = books?.results.find(b => b.abbrev === navigation.previous!.book);
+      if (prevBook) {
+        setBook(prevBook.id.toString());
+        setChapter(navigation.previous.chapter.toString());
+      }
+    }
+  };
 
-  
+  const handleNextChapter = () => {
+    if (navigation?.next) {
+      const nextBook = books?.results.find(b => b.abbrev === navigation.next!.book);
+      if (nextBook) {
+        setBook(nextBook.id.toString());
+        setChapter(navigation.next.chapter.toString());
+      }
+    }
+  };
+
   const handleVerseClick = (verse: BibleVerse) => {
     setSelectedVerse(verse);
     setSidebarOpen(true);
@@ -63,7 +89,7 @@ const Bible = () => {
   const [toggleFavorite] = useToggleFavoriteMutation();
   const [highlightVerse] = useHighlightVerseMutation();
 
-const handleFavoriteClick = async () => {
+  const handleFavoriteClick = async () => {
     if (!selectedVerse) return;
 
     const payload = {
@@ -73,7 +99,6 @@ const handleFavoriteClick = async () => {
     };
 
     try {
-      // Atualização otimista no cache
       dispatch(
         bibleApi.util.updateQueryData(
           'getVerses',
@@ -87,52 +112,46 @@ const handleFavoriteClick = async () => {
         )
       );
 
-      // Atualiza no servidor
       await toggleFavorite(payload).unwrap();
-
       console.log('⭐ Favorito atualizado com sucesso!');
     } catch (error) {
       console.error('Erro ao favoritar versículo:', error);
     }
   };
 
+  const handleHighlight = async (color: HighlightColor) => {
+    if (!selectedVerse) return;
 
-   const handleHighlight = async (color: HighlightColor) => {
-  if (!selectedVerse) return;
+    const payload = {
+      verse: selectedVerse.id,
+      color,
+      is_favorite: selectedVerse.user_highlight?.is_favorite ?? false,
+    };
 
-  const payload = {
-    verse: selectedVerse.id,
-    color,
-    is_favorite: selectedVerse.user_highlight?.is_favorite ?? false,
-  };
-
-  try {
-    // 🟢 Atualização otimista no cache local
-    dispatch(
-      bibleApi.util.updateQueryData(
-        'getVerses',
-        { book, chapter, version },
-        (draft) => {
-          const verse = draft.results.find(v => v.id === selectedVerse.id);
-          if (verse) {
-            verse.user_highlight = {
-              id: verse.user_highlight?.id ?? (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)),
-              color,
-              is_favorite: payload.is_favorite,
-              created_at: verse.user_highlight?.created_at ?? new Date().toISOString(),
-            };
+    try {
+      dispatch(
+        bibleApi.util.updateQueryData(
+          'getVerses',
+          { book, chapter, version },
+          (draft) => {
+            const verse = draft.results.find(v => v.id === selectedVerse.id);
+            if (verse) {
+              verse.user_highlight = {
+                id: verse.user_highlight?.id ?? crypto.randomUUID(),
+                color,
+                is_favorite: payload.is_favorite,
+                created_at: verse.user_highlight?.created_at ?? new Date().toISOString(),
+              };
+            }
           }
-        }
-      )
-    );
+        )
+      );
 
-    // 🟢 Envia pro backend (com RTK mutation)
-    await highlightVerse(payload).unwrap();
-
-  } catch (err) {
-    console.error('Erro ao aplicar destaque:', err);
-  }
-};
+      await highlightVerse(payload).unwrap();
+    } catch (err) {
+      console.error('Erro ao aplicar destaque:', err);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -146,7 +165,7 @@ const handleFavoriteClick = async () => {
                 <Book className="text-purple-600" size={28} />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-800">Bíblia Sagrada</h1>
-                  <p className="text-sm text-gray-500">Almeida Corrigida Fiel</p>
+                  <p className="text-sm text-gray-500">{version}</p>
                 </div>
               </div>
 
@@ -165,30 +184,83 @@ const handleFavoriteClick = async () => {
 
             {/* Navigation */}
             <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              {/* ✅ ATUALIZADO: Botão anterior com estado */}
+              <button 
+                onClick={handlePreviousChapter}
+                disabled={!navigation?.previous}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title={navigation?.previous 
+                  ? `${navigation.previous.book_name} ${navigation.previous.chapter}`
+                  : 'Início da Bíblia'
+                }
+              >
                 <ChevronLeft size={20} />
               </button>
 
               <div className="flex items-center gap-3 flex-1">
-                <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" value={book} onChange={(e) => setBook(e.target.value)}>
+                <select 
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" 
+                  value={book} 
+                  onChange={(e) => {
+                    setBook(e.target.value);
+                    setChapter('1');
+                  }}
+                >
                   {books?.results.map(book => (
-                    <option key={book.name} value={book.id}>{book.name}</option>
+                    <option key={book.id} value={book.id}>{book.name}</option>
                   ))}
                 </select>
 
-                <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" value={chapter} onChange={(e) => setChapter(e.target.value)}>
+                <select 
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white" 
+                  value={chapter} 
+                  onChange={(e) => setChapter(e.target.value)}
+                >
                   {[...Array(books?.results.find(item => item.id === parseInt(book))?.total_chapters)].map((_, i) => (
                     <option key={i + 1} value={i + 1}>Capítulo {i + 1}</option>
                   ))}
                 </select>
 
-                <span className="text-gray-600 font-medium">{verses?.results[0].version}</span>
+                <select
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                >
+                  {versions.map(v => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
               </div>
 
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              {/* ✅ ATUALIZADO: Botão próximo com estado */}
+              <button 
+                onClick={handleNextChapter}
+                disabled={!navigation?.next}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title={navigation?.next 
+                  ? `${navigation.next.book_name} ${navigation.next.chapter}`
+                  : 'Fim da Bíblia'
+                }
+              >
                 <ChevronRight size={20} />
               </button>
             </div>
+
+            {/* ✅ NOVO: Barra de progresso do livro */}
+            {navigation && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                  <span>Cap. {navigation.current.chapter} de {navigation.current.total_chapters}</span>
+                  <span>{Math.round((navigation.current.chapter / navigation.current.total_chapters) * 100)}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
+                    style={{ width: `${(navigation.current.chapter / navigation.current.total_chapters) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
@@ -197,7 +269,7 @@ const handleFavoriteClick = async () => {
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow-lg p-8 md:p-12">
               <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-                {verses?.results[0].book_name} {verses?.results[0].chapter}
+                {verses?.results[0]?.book_name} {verses?.results[0]?.chapter}
               </h2>
 
               <div className="space-y-4 text-lg leading-relaxed">
@@ -228,14 +300,43 @@ const handleFavoriteClick = async () => {
                 ))}
               </div>
 
-              {/* Chapter Navigation */}
+              {/* ✅ ATUALIZADO: Navegação de capítulos com dados reais */}
               <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-                <button className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
+                <button 
+                  onClick={handlePreviousChapter}
+                  disabled={!navigation?.previous}
+                  className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                >
                   <ChevronLeft size={20} />
-                  <span>Capítulo Anterior</span>
+                  <div className="text-left">
+                    <div className="text-xs text-gray-500">Anterior</div>
+                    <div className="font-medium">
+                      {navigation?.previous
+                        ? navigation.previous.is_same_book
+                          ? `Cap. ${navigation.previous.chapter}`
+                          : `${navigation.previous.book_name} ${navigation.previous.chapter}`
+                        : 'Início'
+                      }
+                    </div>
+                  </div>
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
-                  <span>Próximo Capítulo</span>
+
+                <button 
+                  onClick={handleNextChapter}
+                  disabled={!navigation?.next}
+                  className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                >
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500">Próximo</div>
+                    <div className="font-medium">
+                      {navigation?.next
+                        ? navigation.next.is_same_book
+                          ? `Cap. ${navigation.next.chapter}`
+                          : `${navigation.next.book_name} ${navigation.next.chapter}`
+                        : 'Fim'
+                      }
+                    </div>
+                  </div>
                   <ChevronRight size={20} />
                 </button>
               </div>
@@ -244,11 +345,10 @@ const handleFavoriteClick = async () => {
         </div>
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar - Mantém igual ao original */}
       <aside className={`${sidebarOpen ? 'w-96' : 'w-0'} bg-white border-l border-gray-200 transition-all duration-300 overflow-hidden flex flex-col shadow-xl`}>
         {selectedVerse && (
           <>
-            {/* Sidebar Header */}
             <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-800">Ferramentas do Versículo</h3>
@@ -260,17 +360,19 @@ const handleFavoriteClick = async () => {
                 </button>
               </div>
               <p className="text-sm text-gray-600">
-                {currentBook} {currentChapter}:{selectedVerse.verse} - {selectedVerse.text}
+                {selectedVerse.book_name} {selectedVerse.chapter}:{selectedVerse.verse} - {selectedVerse.text}
               </p>
             </div>
 
-            {/* Sidebar Content */}
             <div className="flex-1 overflow-y-auto p-6">
               {/* Quick Actions */}
               <div className="mb-6">
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">Ações Rápidas</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="flex items-center gap-2 px-3 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded-lg transition-colors text-sm" onClick={ handleFavoriteClick}>
+                  <button 
+                    className="flex items-center gap-2 px-3 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded-lg transition-colors text-sm" 
+                    onClick={handleFavoriteClick}
+                  >
                     <Star size={16} />
                     <span>Favoritar</span>
                   </button>
@@ -301,12 +403,13 @@ const handleFavoriteClick = async () => {
                       key={option.value}
                       className={`w-10 h-10 ${option.color} rounded-lg hover:ring-2 ring-gray-400 transition-all`}
                       title={option.name}
-                      onClick={() => 
-                        handleHighlight(option.value as HighlightColor)
-                      }   
+                      onClick={() => handleHighlight(option.value as HighlightColor)}   
                     />
                   ))}
-                  <button className="w-10 h-10 bg-gray-200 rounded-lg hover:ring-2 ring-gray-400 transition-all flex items-center justify-center" onClick={() => handleHighlight("")}>
+                  <button 
+                    className="w-10 h-10 bg-gray-200 rounded-lg hover:ring-2 ring-gray-400 transition-all flex items-center justify-center" 
+                    onClick={() => handleHighlight("")}
+                  >
                     <X size={16} className="text-gray-600" />
                   </button>
                 </div>

@@ -1,4 +1,4 @@
-// src/components/ReadingPlan/index.tsx
+// src/components/ReadingPlan/index.tsx - VERSÃO COMPLETA E FUNCIONAL
 
 import React, { useState } from 'react';
 import { 
@@ -8,19 +8,27 @@ import {
 import PlanCard from  './PlanCard'
 import DailyReading from './DailyReading';
 import CreatePlanModal from './CreatePlanModal';
+import CalendarView from './CalendarView';
+import ReadingHistory from './ReadingHistory';
 import { 
   useGetMyPlansQuery, 
   useGetTodayReadingQuery, 
   useUpdateReadingStatusMutation,
   useGetReadingStatsQuery,
-  useDeletePlanMutation 
+  useDeletePlanMutation,
+  useGetReadingHistoryQuery
 } from '../../feature/readingPlan/readingPlanApi';
-import type { ReadingPlan } from '../../types/readingPlan.types';
+import type { ReadingPlan, ReadingDay } from '../../types/readingPlan.types';
+import { useNavigate } from 'react-router-dom';
 
 const ReadingPlanComponent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'today' | 'plans' | 'history'>('today');
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'today' | 'plans' | 'calendar' | 'history'>('today');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
 
   const { data: plans, isLoading: plansLoading, refetch: refetchPlans } = useGetMyPlansQuery();
   const activePlan = plans?.find(p => p.is_active);
@@ -32,6 +40,13 @@ const ReadingPlanComponent: React.FC = () => {
 
   const { data: stats } = useGetReadingStatsQuery(currentPlanId!, {
     skip: !currentPlanId,
+  });
+
+  const { data: historyReadings, isLoading: historyLoading } = useGetReadingHistoryQuery({
+    planId: currentPlanId!,
+    month: activeTab === 'calendar' ? selectedMonth : undefined
+  }, {
+    skip: !currentPlanId || (activeTab !== 'calendar' && activeTab !== 'history'),
   });
 
   const [updateStatus, { isLoading: isUpdating }] = useUpdateReadingStatusMutation();
@@ -65,6 +80,13 @@ const ReadingPlanComponent: React.FC = () => {
 
   const handleCreateSuccess = () => {
     refetchPlans();
+  };
+
+  const handleReadingClick = (reading: ReadingDay) => {
+    if (reading.readings && reading.readings.length > 0) {
+      const firstRef = reading.readings[0].reference;
+      navigate(`/bible?ref=${encodeURIComponent(firstRef)}`);
+    }
   };
 
   return (
@@ -154,7 +176,7 @@ const ReadingPlanComponent: React.FC = () => {
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              Leitura de Hoje
+              Hoje
             </button>
             <button
               onClick={() => setActiveTab('plans')}
@@ -164,7 +186,18 @@ const ReadingPlanComponent: React.FC = () => {
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              Meus Planos ({plans?.length || 0})
+              Planos ({plans?.length || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'calendar'
+                  ? 'bg-white text-gray-800 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+              disabled={!currentPlanId}
+            >
+              📅 Calendário
             </button>
             <button
               onClick={() => setActiveTab('history')}
@@ -173,8 +206,9 @@ const ReadingPlanComponent: React.FC = () => {
                   ? 'bg-white text-gray-800 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
+              disabled={!currentPlanId}
             >
-              Histórico
+              📊 Histórico
             </button>
           </div>
         </div>
@@ -257,16 +291,37 @@ const ReadingPlanComponent: React.FC = () => {
           </div>
         )}
 
+        {/* Calendar Tab */}
+        {activeTab === 'calendar' && (
+          <div>
+            {historyLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
+              </div>
+            ) : (
+              <CalendarView
+                planId={currentPlanId!}
+                readings={historyReadings || []}
+                onDayClick={handleReadingClick}
+                onMonthChange={setSelectedMonth}
+              />
+            )}
+          </div>
+        )}
+
         {/* History Tab */}
         {activeTab === 'history' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Calendar className="mx-auto mb-4 text-gray-300" size={64} />
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
-              Histórico de Leituras
-            </h3>
-            <p className="text-gray-600">
-              Visualize todo o seu histórico de leituras completas
-            </p>
+          <div>
+            {historyLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
+              </div>
+            ) : (
+              <ReadingHistory
+                readings={historyReadings || []}
+                onReadingClick={handleReadingClick}
+              />
+            )}
           </div>
         )}
       </div>
