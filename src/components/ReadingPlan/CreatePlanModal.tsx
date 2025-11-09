@@ -4,7 +4,7 @@ import React from 'react';
 import { X, BookOpen, Calendar, Check } from 'lucide-react';
 import { useGetPlanTemplatesQuery, useCreatePlanMutation } from '../../feature/readingPlan/readingPlanApi';
 import { useMockPlanTemplates } from '../../mocks/readingPlanTemplates';
-import type { PlanTemplate } from '../../types/readingPlan.types';
+import type { PlanTemplate} from '../../types/readingPlan.types';
 
 interface CreatePlanModalProps {
   isOpen: boolean;
@@ -126,7 +126,7 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onSu
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {templates?.map((template) => (
+                  {templates.results?.map((template) => (
                     <div
                       key={template.id}
                       onClick={() => handleTemplateSelect(template)}

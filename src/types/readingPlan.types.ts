@@ -49,6 +49,10 @@ export interface PlanTemplate {
   readings_count: number;
 }
 
+export interface PlanTemplateResponse {
+  "results": PlanTemplate[]
+}
+
 export interface CreatePlanPayload {
   template_id?: string;
   name: string;

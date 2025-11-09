@@ -4,6 +4,7 @@ import React from 'react';
 import { CheckCircle, Circle, Book, Calendar, MessageSquare, ChevronRight } from 'lucide-react';
 import type { ReadingDay } from '../../types/readingPlan.types';
 import { useNavigate } from 'react-router-dom';
+import { useUpdateReadingStatusMutation } from '../../feature/readingPlan/readingPlanApi';
 
 interface DailyReadingProps {
   reading: ReadingDay;
@@ -15,6 +16,10 @@ const DailyReading: React.FC<DailyReadingProps> = ({ reading, onStatusChange, is
   const navigate = useNavigate();
   const [showNotes, setShowNotes] = React.useState(false);
   const [notes, setNotes] = React.useState(reading.notes || '');
+  const [isSavingNotes, setIsSavingNotes] = React.useState(false);
+  
+  // ✅ Hook para salvar notas
+  const [updateReading] = useUpdateReadingStatusMutation();
 
   const isCompleted = reading.status === 'completed';
   const isSkipped = reading.status === 'skipped';
@@ -22,6 +27,31 @@ const DailyReading: React.FC<DailyReadingProps> = ({ reading, onStatusChange, is
   const handleReadNow = (reference: string) => {
     // Navegar para a Bíblia com a referência específica
     navigate(`/bible?ref=${encodeURIComponent(reference)}`);
+  };
+
+  // ✅ IMPLEMENTADO: Função para salvar notas
+  const handleSaveNotes = async () => {
+    if (notes === reading.notes) {
+      alert('Nenhuma alteração foi feita nas notas');
+      return;
+    }
+
+    setIsSavingNotes(true);
+    try {
+      await updateReading({
+        reading_day_id: reading.id,
+        status: reading.status,
+        notes: notes,
+      }).unwrap();
+      
+      alert('Notas salvas com sucesso!');
+      setShowNotes(false);
+    } catch (error) {
+      console.error('Erro ao salvar notas:', error);
+      alert('Erro ao salvar notas. Tente novamente.');
+    } finally {
+      setIsSavingNotes(false);
+    }
   };
 
   return (
@@ -101,11 +131,11 @@ const DailyReading: React.FC<DailyReadingProps> = ({ reading, onStatusChange, is
           className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors mb-3"
         >
           <MessageSquare size={16} />
-          {showNotes ? 'Ocultar anotações' : 'Adicionar anotações'}
+          {showNotes ? 'Ocultar anotações' : reading.notes ? 'Ver/Editar anotações' : 'Adicionar anotações'}
         </button>
 
         {showNotes && (
-          <div>
+          <div className="space-y-3">
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -113,15 +143,33 @@ const DailyReading: React.FC<DailyReadingProps> = ({ reading, onStatusChange, is
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
               rows={4}
             />
-            <button
-              onClick={() => {
-                // Aqui você salvaria as notas
-                console.log('Salvar notas:', notes);
-              }}
-              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-            >
-              Salvar Anotações
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveNotes}
+                disabled={isSavingNotes || notes === reading.notes}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSavingNotes ? 'Salvando...' : 'Salvar Anotações'}
+              </button>
+              <button
+                onClick={() => {
+                  setNotes(reading.notes || '');
+                  setShowNotes(false);
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Show existing notes preview when collapsed */}
+        {!showNotes && reading.notes && (
+          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-gray-700 line-clamp-2">
+              {reading.notes}
+            </p>
           </div>
         )}
       </div>

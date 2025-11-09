@@ -8,12 +8,15 @@ import type {
   CreatePlanPayload, 
   UpdateReadingPayload,
   ReadingDay,
-  ReadingStats
+  ReadingStats,
+  PlanTemplateResponse
 } from '../../types/readingPlan.types';
 
 export const readingPlanApi = createApi({
   reducerPath: 'readingPlanApi',
   baseQuery: fetchBaseQuery({
+    // ✅ IMPORTANTE: baseUrl já tem /api/ se VITE_API_URL = http://localhost:8000/api
+    // OU não tem /api/ se VITE_API_URL = http://localhost:8000
     baseUrl: import.meta.env.VITE_API_URL,
     prepareHeaders: (headers) => {
       const token = authService.getToken();
@@ -26,26 +29,26 @@ export const readingPlanApi = createApi({
   tagTypes: ['ReadingPlans', 'ReadingDays', 'Stats'],
   endpoints: (builder) => ({
     // ✅ Listar templates disponíveis
-    getPlanTemplates: builder.query<PlanTemplate[], void>({
-      query: () => '/api/reading-plans/templates/',
+    getPlanTemplates: builder.query<PlanTemplateResponse, void>({
+      query: () => '/reading-plans/templates/',
     }),
 
     // ✅ Listar planos do usuário  
     getMyPlans: builder.query<ReadingPlan[], void>({
-      query: () => '/api/reading-plans/my-plans/',
+      query: () => '/reading-plans/my-plans/',
       providesTags: ['ReadingPlans'],
     }),
 
     // ✅ Obter plano específico
     getPlan: builder.query<ReadingPlan, string>({
-      query: (id) => `/api/reading-plans/${id}/`,
+      query: (id) => `/reading-plans/${id}/`,
       providesTags: ['ReadingPlans'],
     }),
 
     // ✅ Criar novo plano
     createPlan: builder.mutation<ReadingPlan, CreatePlanPayload>({
       query: (payload) => ({
-        url: '/api/reading-plans/create_plan/',
+        url: '/reading-plans/create_plan/',
         method: 'POST',
         body: payload,
       }),
@@ -54,14 +57,14 @@ export const readingPlanApi = createApi({
 
     // ✅ Obter leitura do dia
     getTodayReading: builder.query<ReadingDay, string>({
-      query: (planId) => `/api/reading-plans/${planId}/today/`,
+      query: (planId) => `/reading-plans/${planId}/today/`,
       providesTags: ['ReadingDays'],
     }),
 
     // ✅ Marcar leitura como completa/pendente
     updateReadingStatus: builder.mutation<ReadingDay, UpdateReadingPayload>({
       query: ({ reading_day_id, ...payload }) => ({
-        url: `/api/reading-days/${reading_day_id}/`,
+        url: `/reading-days/${reading_day_id}/`,
         method: 'PATCH',
         body: payload,
       }),
@@ -71,7 +74,7 @@ export const readingPlanApi = createApi({
     // ✅ Obter histórico de leituras
     getReadingHistory: builder.query<ReadingDay[], { planId: string; month?: string }>({
       query: ({ planId, month }) => ({
-        url: `/api/reading-plans/${planId}/history/`,
+        url: `/reading-plans/${planId}/history/`,
         params: month ? { month } : undefined,
       }),
       providesTags: ['ReadingDays'],
@@ -79,14 +82,14 @@ export const readingPlanApi = createApi({
 
     // ✅ Obter estatísticas
     getReadingStats: builder.query<ReadingStats, string>({
-      query: (planId) => `/api/reading-plans/${planId}/stats/`,
+      query: (planId) => `/reading-plans/${planId}/stats/`,
       providesTags: ['Stats'],
     }),
 
     // ✅ Deletar plano
     deletePlan: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/api/reading-plans/${id}/`,
+        url: `/reading-plans/${id}/`,
         method: 'DELETE',
       }),
       invalidatesTags: ['ReadingPlans'],

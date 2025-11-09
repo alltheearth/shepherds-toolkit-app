@@ -1,12 +1,9 @@
 // src/mocks/readingPlanTemplates.ts
 
+import { useState, useEffect } from 'react';
 import type { PlanTemplate } from '../types/readingPlan.types';
 
-/**
- * Templates mock para usar enquanto o backend não está pronto
- * Substitua o useGetPlanTemplatesQuery por este arquivo
- */
-export const mockTemplates: PlanTemplate[] = [
+const mockTemplates: PlanTemplate[] = [
   {
     id: 'bible_year',
     name: 'Bíblia em 1 Ano',
@@ -15,7 +12,7 @@ export const mockTemplates: PlanTemplate[] = [
     duration_days: 365,
     icon: '📖',
     color: 'from-blue-500 to-blue-600',
-    readings_count: 365
+    readings_count: 365,
   },
   {
     id: 'nt_90days',
@@ -25,7 +22,7 @@ export const mockTemplates: PlanTemplate[] = [
     duration_days: 90,
     icon: '✝️',
     color: 'from-green-500 to-green-600',
-    readings_count: 90
+    readings_count: 90,
   },
   {
     id: 'psalms_month',
@@ -35,7 +32,7 @@ export const mockTemplates: PlanTemplate[] = [
     duration_days: 30,
     icon: '🎵',
     color: 'from-purple-500 to-purple-600',
-    readings_count: 150
+    readings_count: 150,
   },
   {
     id: 'gospels_40days',
@@ -45,7 +42,7 @@ export const mockTemplates: PlanTemplate[] = [
     duration_days: 40,
     icon: '🕊️',
     color: 'from-pink-500 to-pink-600',
-    readings_count: 89
+    readings_count: 89,
   },
   {
     id: 'proverbs_month',
@@ -55,29 +52,25 @@ export const mockTemplates: PlanTemplate[] = [
     duration_days: 31,
     icon: '💡',
     color: 'from-yellow-500 to-yellow-600',
-    readings_count: 31
+    readings_count: 31,
   },
-  {
-    id: 'custom',
-    name: 'Plano Personalizado',
-    description: 'Crie seu próprio cronograma de leitura personalizado',
-    type: 'custom',
-    duration_days: 0,
-    icon: '⚙️',
-    color: 'from-orange-500 to-orange-600',
-    readings_count: 0
-  }
 ];
 
-/**
- * Hook mock para simular o comportamento do RTK Query
- * Use este enquanto o backend não está pronto
- */
 export const useMockPlanTemplates = () => {
-  return {
-    data: mockTemplates,
-    isLoading: false,
-    error: null,
-    refetch: () => Promise.resolve({ data: mockTemplates })
-  };
+  const [data, setData] = useState<PlanTemplate[] | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simular delay de API
+    const timer = setTimeout(() => {
+      setData(mockTemplates);
+      setIsLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return { data, isLoading };
 };
+
+export default mockTemplates;
