@@ -10,13 +10,20 @@ interface CalendarTabProps {
 
 const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
   const [selectedMonth, setSelectedMonth] = React.useState<string>(
-    new Date().toISOString().split('T')[0]
+    // ✅ CORREÇÃO: Enviar apenas ano-mês (YYYY-MM)
+    new Date().toISOString().split('T')[0].substring(0, 7)
   );
 
   const { data: readings, isLoading } = useGetReadingHistoryQuery({
     planId,
     month: selectedMonth
   });
+
+  const handleMonthChange = (newMonth: string) => {
+    // ✅ Garantir formato YYYY-MM
+    const formattedMonth = newMonth.substring(0, 7);
+    setSelectedMonth(formattedMonth);
+  };
 
   if (isLoading) {
     return (
@@ -46,9 +53,8 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
       readings={readings}
       onDayClick={(reading) => {
         console.log('Dia selecionado:', reading);
-        // Você pode adicionar um modal ou navegação aqui
       }}
-      onMonthChange={setSelectedMonth}
+      onMonthChange={handleMonthChange}
     />
   );
 };

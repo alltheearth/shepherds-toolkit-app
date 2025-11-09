@@ -52,7 +52,7 @@ const ReadingPlanComponent: React.FC = () => {
   const [updateStatus, { isLoading: isUpdating }] = useUpdateReadingStatusMutation();
   const [deletePlan] = useDeletePlanMutation();
 
-  const handleStatusChange = async (status: 'completed' | 'skipped') => {
+const handleStatusChange = async (status: 'completed' | 'skipped') => {
     if (!todayReading) return;
 
     try {
@@ -60,8 +60,12 @@ const ReadingPlanComponent: React.FC = () => {
         reading_day_id: todayReading.id,
         status,
       }).unwrap();
+      
+      // Refetch para atualizar os dados
+      refetchPlans();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
+      alert('Erro ao atualizar status da leitura. Tente novamente.');
     }
   };
 
