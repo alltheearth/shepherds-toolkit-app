@@ -1,4 +1,4 @@
-// src/components/ReadingPlan/index.tsx - VERSÃO CORRIGIDA
+// src/components/ReadingPlan/index.tsx - VERSÃO TOTALMENTE CORRIGIDA
 
 import React, { useState } from 'react';
 import { 
@@ -27,7 +27,7 @@ const ReadingPlanComponent: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   
-  // ✅ CORREÇÃO CRÍTICA: Inicializar com YYYY-MM
+  // ✅ CORREÇÃO: Inicializar com YYYY-MM
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const today = new Date();
     const year = today.getFullYear();
@@ -39,7 +39,7 @@ const ReadingPlanComponent: React.FC = () => {
   const activePlan = plans?.find(p => p.is_active);
   const currentPlanId = selectedPlan || activePlan?.id;
 
-  const { data: todayReading } = useGetTodayReadingQuery(currentPlanId!, {
+  const { data: todayReading, isLoading: todayLoading, error: todayError } = useGetTodayReadingQuery(currentPlanId!, {
     skip: !currentPlanId,
   });
 
@@ -47,15 +47,42 @@ const ReadingPlanComponent: React.FC = () => {
     skip: !currentPlanId,
   });
 
-  const { data: historyReadings, isLoading: historyLoading } = useGetReadingHistoryQuery({
-    planId: currentPlanId!,
-    month: activeTab === 'calendar' ? selectedMonth : undefined
-  }, {
-    skip: !currentPlanId || (activeTab !== 'calendar' && activeTab !== 'history'),
-  });
+  // ✅ CORREÇÃO: Apenas buscar histórico quando necessário
+  const shouldFetchHistory = currentPlanId && (activeTab === 'calendar' || activeTab === 'history');
+  
+  const { 
+    data: historyReadings, 
+    isLoading: historyLoading,
+    error: historyError,
+    refetch: refetchHistory
+  } = useGetReadingHistoryQuery(
+    {
+      planId: currentPlanId!,
+      month: selectedMonth
+    },
+    {
+      skip: !shouldFetchHistory,
+    }
+  );
 
   const [updateStatus, { isLoading: isUpdating }] = useUpdateReadingStatusMutation();
   const [deletePlan] = useDeletePlanMutation();
+
+  // ✅ Debug: Log dos dados
+  React.useEffect(() => {
+    console.log('📊 Estado atual:', {
+      currentPlanId,
+      activeTab,
+      selectedMonth,
+      todayReading,
+      todayLoading,
+      todayError,
+      historyReadings,
+      historyLoading,
+      historyError,
+      shouldFetchHistory
+    });
+  }, [currentPlanId, activeTab, selectedMonth, todayReading, historyReadings, todayLoading, historyLoading]);
 
   const handleStatusChange = async (status: 'completed' | 'skipped') => {
     if (!todayReading) return;
@@ -67,6 +94,7 @@ const ReadingPlanComponent: React.FC = () => {
       }).unwrap();
       
       refetchPlans();
+      refetchHistory();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       alert('Erro ao atualizar status da leitura. Tente novamente.');
@@ -97,12 +125,19 @@ const ReadingPlanComponent: React.FC = () => {
     }
   };
 
-  // ✅ Handler para mudança de mês (garante formato YYYY-MM)
+  // ✅ Handler para mudança de mês
   const handleMonthChange = (newMonth: string) => {
-    const formattedMonth = newMonth.substring(0, 7); // Garante YYYY-MM
+    const formattedMonth = newMonth.substring(0, 7);
     console.log('📅 Mudando mês para:', formattedMonth);
     setSelectedMonth(formattedMonth);
   };
+
+  // ✅ Efeito para refetch quando mudar de aba
+  React.useEffect(() => {
+    if (shouldFetchHistory) {
+      refetchHistory();
+    }
+  }, [activeTab, selectedMonth, shouldFetchHistory]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
@@ -250,6 +285,14 @@ const ReadingPlanComponent: React.FC = () => {
                   Criar Meu Primeiro Plano
                 </button>
               </div>
+            ) : todayLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
+              </div>
+            ) : todayError ? (
+              <div className="bg-white rounded-xl shadow-sm border border-red-200 p-12 text-center">
+                <p className="text-red-600">Erro ao carregar leitura do dia</p>
+              </div>
             ) : todayReading ? (
               <DailyReading
                 reading={todayReading}
@@ -257,8 +300,14 @@ const ReadingPlanComponent: React.FC = () => {
                 isLoading={isUpdating}
               />
             ) : (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                <Calendar className="mx-auto mb-4 text-gray-300" size={64} />
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  Nenhuma leitura para hoje
+                </h3>
+                <p className="text-gray-600">
+                  Não há leitura programada para hoje no seu plano
+                </p>
               </div>
             )}
           </div>
@@ -313,6 +362,11 @@ const ReadingPlanComponent: React.FC = () => {
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
               </div>
+            ) : historyError ? (
+              <div className="bg-white rounded-xl shadow-sm border border-red-200 p-12 text-center">
+                <p className="text-red-600">Erro ao carregar calendário</p>
+                <pre className="text-xs mt-2">{JSON.stringify(historyError, null, 2)}</pre>
+              </div>
             ) : (
               <CalendarView
                 planId={currentPlanId!}
@@ -330,6 +384,10 @@ const ReadingPlanComponent: React.FC = () => {
             {historyLoading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
+              </div>
+            ) : historyError ? (
+              <div className="bg-white rounded-xl shadow-sm border border-red-200 p-12 text-center">
+                <p className="text-red-600">Erro ao carregar histórico</p>
               </div>
             ) : (
               <ReadingHistory
