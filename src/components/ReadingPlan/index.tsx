@@ -20,6 +20,7 @@ import {
 } from '../../feature/readingPlan/readingPlanApi';
 import type { ReadingPlan, ReadingDay } from '../../types/readingPlan.types';
 import { useNavigate } from 'react-router-dom';
+import CalendarTab from './CalendarTab';
 
 const ReadingPlanComponent: React.FC = () => {
   const navigate = useNavigate();
@@ -356,26 +357,8 @@ const ReadingPlanComponent: React.FC = () => {
         )}
 
         {/* Calendar Tab */}
-        {activeTab === 'calendar' && (
-          <div>
-            {historyLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
-              </div>
-            ) : historyError ? (
-              <div className="bg-white rounded-xl shadow-sm border border-red-200 p-12 text-center">
-                <p className="text-red-600">Erro ao carregar calendário</p>
-                <pre className="text-xs mt-2">{JSON.stringify(historyError, null, 2)}</pre>
-              </div>
-            ) : (
-              <CalendarView
-                planId={currentPlanId!}
-                readings={historyReadings || []}
-                onDayClick={handleReadingClick}
-                onMonthChange={handleMonthChange}
-              />
-            )}
-          </div>
+        {activeTab === 'calendar' && currentPlanId && (
+          <CalendarTab planId={currentPlanId} />
         )}
 
         {/* History Tab */}

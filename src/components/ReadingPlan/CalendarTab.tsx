@@ -1,28 +1,98 @@
 // src/components/ReadingPlan/CalendarTab.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import CalendarView from './CalendarView';
-import { useGetReadingHistoryQuery } from '../../feature/readingPlan/readingPlanApi';
+import ReadingDayModal from './ReadingDayModal';
+import { useGetReadingHistoryQuery, useUpdateReadingStatusMutation } from '../../feature/readingPlan/readingPlanApi';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import type { ReadingDay } from '../../types/readingPlan.types';
 
 interface CalendarTabProps {
   planId: string;
 }
 
 const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
+  const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = React.useState<string>(
-    // ✅ CORREÇÃO: Enviar apenas ano-mês (YYYY-MM)
     new Date().toISOString().split('T')[0].substring(0, 7)
   );
+  const [selectedReading, setSelectedReading] = useState<ReadingDay | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: readings, isLoading } = useGetReadingHistoryQuery({
+  const { data: readings, isLoading, refetch } = useGetReadingHistoryQuery({
     planId,
     month: selectedMonth
   });
 
+  const [updateStatus] = useUpdateReadingStatusMutation();
+
   const handleMonthChange = (newMonth: string) => {
-    // ✅ Garantir formato YYYY-MM
     const formattedMonth = newMonth.substring(0, 7);
     setSelectedMonth(formattedMonth);
+  };
+
+  const handleDayClick = (reading: ReadingDay) => {
+    setSelectedReading(reading);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedReading(null);
+  };
+
+  const handleStatusChange = async (readingId: string, status: 'completed' | 'skipped' | 'pending') => {
+    try {
+      await updateStatus({
+        reading_day_id: readingId,
+        status: status,
+      }).unwrap();
+      
+      // Refetch data e atualizar reading selecionado
+      await refetch();
+      
+      // Atualizar o estado local do selectedReading
+      if (selectedReading && selectedReading.id === readingId) {
+        const updatedReading = readings?.find(r => r.id === readingId);
+        if (updatedReading) {
+          setSelectedReading(updatedReading);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      throw error;
+    }
+  };
+
+  const handleNotesUpdate = async (readingId: string, notes: string) => {
+    try {
+      // Buscar reading atual para pegar o status
+      const currentReading = readings?.find(r => r.id === readingId);
+      if (!currentReading) throw new Error('Leitura não encontrada');
+
+      await updateStatus({
+        reading_day_id: readingId,
+        status: currentReading.status,
+        notes: notes,
+      }).unwrap();
+      
+      // Refetch data e atualizar reading selecionado
+      await refetch();
+      
+      if (selectedReading && selectedReading.id === readingId) {
+        const updatedReading = readings?.find(r => r.id === readingId);
+        if (updatedReading) {
+          setSelectedReading(updatedReading);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar notas:', error);
+      throw error;
+    }
+  };
+
+  const handleReadNow = (reference: string) => {
+    navigate(`/bible?ref=${encodeURIComponent(reference)}`);
   };
 
   if (isLoading) {
@@ -48,14 +118,23 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
   }
 
   return (
-    <CalendarView
-      planId={planId}
-      readings={readings}
-      onDayClick={(reading) => {
-        console.log('Dia selecionado:', reading);
-      }}
-      onMonthChange={handleMonthChange}
-    />
+    <>
+      <CalendarView
+        planId={planId}
+        readings={readings}
+        onDayClick={handleDayClick}
+        onMonthChange={handleMonthChange}
+      />
+      
+      <ReadingDayModal
+        reading={selectedReading}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onStatusChange={handleStatusChange}
+        onNotesUpdate={handleNotesUpdate}
+        onReadNow={handleReadNow}
+      />
+    </>
   );
 };
 
