@@ -1,4 +1,4 @@
-// src/components/ReadingPlan/CalendarTab.tsx - VERSÃO COM DEBUG
+// src/components/ReadingPlan/CalendarTab.tsx
 import React, { useState, useEffect } from 'react';
 import CalendarView from './CalendarView';
 import ReadingDayModal from './ReadingDayModal';
@@ -19,25 +19,36 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
   const [selectedReading, setSelectedReading] = useState<ReadingDay | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: readings, isLoading, error, refetch } = useGetReadingHistoryQuery({
-    planId,
-    month: selectedMonth
-  });
+  // ✅ CORREÇÃO: Adicionar refetchOnMountOrArgChange
+  const { data: readings, isLoading, error, refetch } = useGetReadingHistoryQuery(
+    {
+      planId,
+      month: selectedMonth
+    },
+    {
+      refetchOnMountOrArgChange: true, // ← FORÇA REFETCH
+    }
+  );
 
   const [updateStatus] = useUpdateReadingStatusMutation();
 
-  // ✅ DEBUG: Log para verificar dados recebidos
+  // ✅ DEBUG MELHORADO
   useEffect(() => {
-    console.log('📊 CalendarTab - Dados recebidos:', {
+    console.log('📊 CalendarTab - Estado:', {
       planId,
       selectedMonth,
       isLoading,
       error,
       readingsCount: readings?.length || 0,
-      readings: readings?.map(r => ({
+      readingsByStatus: readings ? {
+        pending: readings.filter(r => r.status === 'pending').length,
+        completed: readings.filter(r => r.status === 'completed').length,
+        skipped: readings.filter(r => r.status === 'skipped').length,
+      } : null,
+      firstReadings: readings?.slice(0, 3).map(r => ({
         date: r.date,
         status: r.status,
-        day_number: r.day_number
+        day: r.day_number
       }))
     });
   }, [planId, selectedMonth, isLoading, error, readings]);
@@ -46,6 +57,8 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
     const formattedMonth = newMonth.substring(0, 7);
     console.log('📅 Mudando mês para:', formattedMonth);
     setSelectedMonth(formattedMonth);
+    // Força refetch imediatamente
+    setTimeout(() => refetch(), 100);
   };
 
   const handleDayClick = (reading: ReadingDay) => {
@@ -68,10 +81,10 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
         status: status,
       }).unwrap();
       
-      // Refetch data e atualizar reading selecionado
+      // Refetch data
       await refetch();
       
-      // Atualizar o estado local do selectedReading
+      // Atualizar selectedReading
       if (selectedReading && selectedReading.id === readingId) {
         const updatedReading = readings?.find(r => r.id === readingId);
         if (updatedReading) {
@@ -79,7 +92,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
         }
       }
       
-      console.log('✅ Status atualizado com sucesso');
+      console.log('✅ Status atualizado');
     } catch (error) {
       console.error('❌ Erro ao atualizar status:', error);
       throw error;
@@ -90,7 +103,6 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
     try {
       console.log('📝 Atualizando notas:', { readingId, notesLength: notes.length });
       
-      // Buscar reading atual para pegar o status
       const currentReading = readings?.find(r => r.id === readingId);
       if (!currentReading) throw new Error('Leitura não encontrada');
 
@@ -100,7 +112,6 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
         notes: notes,
       }).unwrap();
       
-      // Refetch data e atualizar reading selecionado
       await refetch();
       
       if (selectedReading && selectedReading.id === readingId) {
@@ -110,7 +121,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
         }
       }
       
-      console.log('✅ Notas atualizadas com sucesso');
+      console.log('✅ Notas atualizadas');
     } catch (error) {
       console.error('❌ Erro ao atualizar notas:', error);
       throw error;
@@ -123,8 +134,9 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent" />
+      <div className="flex flex-col justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4" />
+        <p className="text-gray-600">Carregando leituras de {selectedMonth}...</p>
       </div>
     );
   }
@@ -138,7 +150,7 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
           Erro ao carregar calendário
         </h3>
         <p className="text-red-600 mb-4">
-          {error?.data?.detail || 'Ocorreu um erro ao buscar as leituras'}
+          {(error as any)?.data?.detail || 'Ocorreu um erro ao buscar as leituras'}
         </p>
         <button
           onClick={() => refetch()}
@@ -146,21 +158,39 @@ const CalendarTab: React.FC<CalendarTabProps> = ({ planId }) => {
         >
           Tentar Novamente
         </button>
+        <div className="mt-4 text-left">
+          <details className="text-xs text-gray-500">
+            <summary className="cursor-pointer">Ver detalhes do erro</summary>
+            <pre className="mt-2 p-2 bg-gray-100 rounded">
+              {JSON.stringify(error, null, 2)}
+            </pre>
+          </details>
+        </div>
       </div>
     );
   }
 
   if (!readings || readings.length === 0) {
-    console.warn('⚠️ Nenhuma leitura encontrada para o mês:', selectedMonth);
+    console.warn('⚠️ Nenhuma leitura encontrada para:', { planId, selectedMonth });
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
         <CalendarIcon className="mx-auto mb-4 text-gray-300" size={64} />
         <h3 className="text-xl font-bold text-gray-800 mb-2">
           Nenhuma leitura encontrada
         </h3>
-        <p className="text-gray-600">
+        <p className="text-gray-600 mb-4">
           Não há leituras programadas para {selectedMonth}
         </p>
+        <button
+          onClick={() => {
+            const today = new Date();
+            const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            setSelectedMonth(currentMonth);
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Ir para Mês Atual
+        </button>
       </div>
     );
   }
