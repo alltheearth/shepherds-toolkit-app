@@ -16,6 +16,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   onDayClick,
   onMonthChange 
 }) => {
+  // No início do componente CalendarView, após as props
+  React.useEffect(() => {
+  console.log('🗓️ CalendarView - Readings recebidos:', {
+    count: readings.length,
+    byStatus: {
+      completed: readings.filter(r => r.status === 'completed').length,
+      pending: readings.filter(r => r.status === 'pending').length,
+      skipped: readings.filter(r => r.status === 'skipped').length,
+    },
+    dates: readings.map(r => r.date).slice(0, 5) // Primeiras 5 datas
+  });
+}, [readings]);
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const monthNames = [
