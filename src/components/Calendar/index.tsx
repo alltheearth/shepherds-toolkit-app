@@ -1,181 +1,233 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Calendar as CalendaR, Plus, Search, Filter, Download, Settings, Clock,
+  Calendar as CalendarIcon, Plus, Search, Filter, Download, Settings, Clock,
   MapPin, Users, ChevronLeft, ChevronRight, MoreVertical, Edit,
-  Trash2, X, Bell, Repeat, Video, Coffee, BookOpen, Heart,
-  Mic, Baby, GraduationCap, Music, Briefcase, Home, AlertCircle
+  Trash2, X, Bell, Repeat, Music, Briefcase, BookOpen, Heart,
+  Mic, Baby, Home, Coffee, AlertCircle, Loader2, Check
 } from 'lucide-react';
+import api from '../../services/api';
 
 const Calendar = () => {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 4)); // October 4, 2025
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showNewEventModal, setShowNewEventModal] = useState(false);
-
-  const events = [
-    {
-      id: 1,
-      title: 'Culto de Celebração',
-      date: '2025-10-05',
-      startTime: '10:00',
-      endTime: '12:00',
-      location: 'Templo Principal',
-      type: 'worship',
-      description: 'Culto dominical de celebração com Santa Ceia',
-      attendees: 450,
-      responsible: 'Pr. João',
-      reminder: '30 minutos antes',
-      recurring: 'weekly',
-      color: 'bg-purple-500'
-    },
-    {
-      id: 2,
-      title: 'Reunião de Liderança',
-      date: '2025-10-07',
-      startTime: '19:00',
-      endTime: '21:00',
-      location: 'Sala de Reuniões',
-      type: 'meeting',
-      description: 'Planejamento estratégico do trimestre',
-      attendees: 15,
-      responsible: 'Pr. João',
-      reminder: '1 hora antes',
-      recurring: 'monthly',
-      color: 'bg-blue-500'
-    },
-    {
-      id: 3,
-      title: 'Estudo Bíblico',
-      date: '2025-10-08',
-      startTime: '20:00',
-      endTime: '21:30',
-      location: 'Templo Principal',
-      type: 'study',
-      description: 'Estudo no livro de Romanos - Capítulo 8',
-      attendees: 120,
-      responsible: 'Pr. Marcos',
-      reminder: '30 minutos antes',
-      recurring: 'weekly',
-      color: 'bg-green-500'
-    },
-    {
-      id: 4,
-      title: 'Ensaio do Coral',
-      date: '2025-10-09',
-      startTime: '19:30',
-      endTime: '21:00',
-      location: 'Sala de Música',
-      type: 'music',
-      description: 'Preparação para o culto especial',
-      attendees: 35,
-      responsible: 'Irmã Maria',
-      reminder: '1 hora antes',
-      recurring: 'weekly',
-      color: 'bg-pink-500'
-    },
-    {
-      id: 5,
-      title: 'Célula - Grupo Jovem',
-      date: '2025-10-10',
-      startTime: '19:00',
-      endTime: '21:00',
-      location: 'Casa do João',
-      type: 'cell',
-      description: 'Encontro semanal do grupo de jovens',
-      attendees: 18,
-      responsible: 'João Pedro',
-      reminder: '30 minutos antes',
-      recurring: 'weekly',
-      color: 'bg-orange-500'
-    },
-    {
-      id: 6,
-      title: 'Ministério Infantil',
-      date: '2025-10-12',
-      startTime: '09:00',
-      endTime: '11:00',
-      location: 'Sala das Crianças',
-      type: 'children',
-      description: 'Culto infantil dominical',
-      attendees: 80,
-      responsible: 'Ana Paula',
-      reminder: '1 hora antes',
-      recurring: 'weekly',
-      color: 'bg-yellow-500'
-    },
-    {
-      id: 7,
-      title: 'Culto de Oração',
-      date: '2025-10-14',
-      startTime: '19:00',
-      endTime: '20:30',
-      location: 'Templo Principal',
-      type: 'prayer',
-      description: 'Vigília de oração e intercessão',
-      attendees: 90,
-      responsible: 'Ministério de Oração',
-      reminder: '30 minutos antes',
-      recurring: 'weekly',
-      color: 'bg-red-500'
-    },
-    {
-      id: 8,
-      title: 'Café Pastoral',
-      date: '2025-10-16',
-      startTime: '08:00',
-      endTime: '09:30',
-      location: 'Casa Pastoral',
-      type: 'fellowship',
-      description: 'Café da manhã com novos membros',
-      attendees: 12,
-      responsible: 'Pr. João',
-      reminder: '1 hora antes',
-      recurring: 'none',
-      color: 'bg-amber-500'
-    },
-    {
-      id: 9,
-      title: 'Culto de Domingo',
-      date: '2025-10-12',
-      startTime: '10:00',
-      endTime: '12:00',
-      location: 'Templo Principal',
-      type: 'worship',
-      description: 'Culto dominical com pregação',
-      attendees: 480,
-      responsible: 'Pr. João',
-      reminder: '30 minutos antes',
-      recurring: 'weekly',
-      color: 'bg-purple-500'
-    },
-    {
-      id: 10,
-      title: 'Reunião de Diáconos',
-      date: '2025-10-15',
-      startTime: '19:30',
-      endTime: '21:00',
-      location: 'Sala de Reuniões',
-      type: 'meeting',
-      description: 'Reunião administrativa mensal',
-      attendees: 8,
-      responsible: 'Diácono Pedro',
-      reminder: '1 hora antes',
-      recurring: 'monthly',
-      color: 'bg-blue-500'
-    },
-  ];
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    event_type: '',
+    location: '',
+    start_datetime: '',
+    end_datetime: '',
+    all_day: false,
+    color: '',
+    reminder_minutes: null,
+  });
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const eventTypes = [
-    { id: 'worship', name: 'Culto', icon: Music, color: 'bg-purple-500' },
+    { id: 'service', name: 'Culto', icon: Music, color: 'bg-purple-500' },
     { id: 'meeting', name: 'Reunião', icon: Briefcase, color: 'bg-blue-500' },
     { id: 'study', name: 'Estudo Bíblico', icon: BookOpen, color: 'bg-green-500' },
     { id: 'prayer', name: 'Oração', icon: Heart, color: 'bg-red-500' },
-    { id: 'music', name: 'Música', icon: Mic, color: 'bg-pink-500' },
-    { id: 'children', name: 'Infantil', icon: Baby, color: 'bg-yellow-500' },
-    { id: 'cell', name: 'Célula', icon: Home, color: 'bg-orange-500' },
-    { id: 'fellowship', name: 'Confraternização', icon: Coffee, color: 'bg-amber-500' },
+    { id: 'visit', name: 'Visita', icon: Users, color: 'bg-orange-500' },
+    { id: 'other', name: 'Outro', icon: Coffee, color: 'bg-gray-500' },
   ];
+
+  // Carregar eventos
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/events/');
+      setEvents(response.data.results || response.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar eventos:', error);
+      alert('Erro ao carregar eventos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Criar evento
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setErrors({});
+    setSubmitting(true);
+
+    try {
+      // Validações
+      if (!formData.title.trim()) {
+        setErrors({ title: 'Título é obrigatório' });
+        setSubmitting(false);
+        return;
+      }
+
+      if (!formData.event_type) {
+        setErrors({ event_type: 'Tipo de evento é obrigatório' });
+        setSubmitting(false);
+        return;
+      }
+
+      if (!formData.start_datetime) {
+        setErrors({ start_datetime: 'Data de início é obrigatória' });
+        setSubmitting(false);
+        return;
+      }
+
+      if (!formData.end_datetime) {
+        setErrors({ end_datetime: 'Data de término é obrigatória' });
+        setSubmitting(false);
+        return;
+      }
+
+      // Formatar dados para o backend
+      const eventData = {
+        ...formData,
+        start_datetime: new Date(formData.start_datetime).toISOString(),
+        end_datetime: new Date(formData.end_datetime).toISOString(),
+        reminder_minutes: formData.reminder_minutes ? parseInt(formData.reminder_minutes) : null,
+      };
+
+      const response = await api.post('/events/', eventData);
+      
+      setEvents([...events, response.data]);
+      setShowNewEventModal(false);
+      resetForm();
+      alert('Evento criado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao criar evento:', error);
+      if (error.response?.data) {
+        setErrors(error.response.data);
+      } else {
+        alert('Erro ao criar evento');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Atualizar evento
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setErrors({});
+    setSubmitting(true);
+
+    try {
+      const eventData = {
+        ...formData,
+        start_datetime: new Date(formData.start_datetime).toISOString(),
+        end_datetime: new Date(formData.end_datetime).toISOString(),
+        reminder_minutes: formData.reminder_minutes ? parseInt(formData.reminder_minutes) : null,
+      };
+
+      const response = await api.put(`/events/${selectedEvent.id}/`, eventData);
+      
+      setEvents(events.map(e => e.id === selectedEvent.id ? response.data : e));
+      setShowNewEventModal(false);
+      setIsEditing(false);
+      resetForm();
+      alert('Evento atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar evento:', error);
+      if (error.response?.data) {
+        setErrors(error.response.data);
+      } else {
+        alert('Erro ao atualizar evento');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Deletar evento
+  const handleDelete = async (eventId) => {
+    if (!confirm('Tem certeza que deseja excluir este evento?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/events/${eventId}/`);
+      setEvents(events.filter(e => e.id !== eventId));
+      setShowModal(false);
+      alert('Evento excluído com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir evento:', error);
+      alert('Erro ao excluir evento');
+    }
+  };
+
+  // Abrir modal de edição
+  const openEditModal = (event) => {
+    setSelectedEvent(event);
+    setIsEditing(true);
+    
+    // Formatar datas para o input datetime-local
+    const startDate = new Date(event.start_datetime);
+    const endDate = new Date(event.end_datetime);
+    
+    setFormData({
+      title: event.title,
+      description: event.description || '',
+      event_type: event.event_type,
+      location: event.location || '',
+      start_datetime: formatDateTimeLocal(startDate),
+      end_datetime: formatDateTimeLocal(endDate),
+      all_day: event.all_day,
+      color: event.color || '',
+      reminder_minutes: event.reminder_minutes || '',
+    });
+    
+    setShowModal(false);
+    setShowNewEventModal(true);
+  };
+
+  // Formatar data para input datetime-local
+  const formatDateTimeLocal = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      event_type: '',
+      location: '',
+      start_datetime: '',
+      end_datetime: '',
+      all_day: false,
+      color: '',
+      reminder_minutes: null,
+    });
+    setErrors({});
+    setSelectedEvent(null);
+    setIsEditing(false);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    // Limpar erro do campo ao editar
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -190,7 +242,10 @@ const Calendar = () => {
 
   const getEventsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return events.filter(event => event.date === dateStr);
+    return events.filter(event => {
+      const eventDate = new Date(event.start_datetime).toISOString().split('T')[0];
+      return eventDate === dateStr;
+    });
   };
 
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
@@ -212,9 +267,20 @@ const Calendar = () => {
   };
 
   const upcomingEvents = events
-    .filter(e => new Date(e.date) >= today)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .filter(e => new Date(e.start_datetime) >= today)
+    .sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime))
     .slice(0, 5);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-pink-600 mx-auto mb-4" />
+          <p className="text-gray-600">Carregando eventos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
@@ -223,7 +289,7 @@ const Calendar = () => {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <CalendaR className="text-pink-600" size={28} />
+              <CalendarIcon className="text-pink-600" size={28} />
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">Agenda e Calendário</h1>
                 <p className="text-sm text-gray-500">Gerencie eventos, cultos e compromissos da igreja</p>
@@ -232,7 +298,10 @@ const Calendar = () => {
 
             <div className="flex items-center gap-3">
               <button 
-                onClick={() => setShowNewEventModal(true)}
+                onClick={() => {
+                  resetForm();
+                  setShowNewEventModal(true);
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors shadow-sm"
               >
                 <Plus size={18} />
@@ -260,16 +329,6 @@ const Calendar = () => {
                   }`}
                 >
                   Mês
-                </button>
-                <button
-                  onClick={() => setViewMode('week')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'week'
-                      ? 'bg-white text-gray-800 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  Semana
                 </button>
                 <button
                   onClick={() => setViewMode('agenda')}
@@ -317,10 +376,6 @@ const Calendar = () => {
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                 />
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <Filter size={18} />
-                <span>Filtros</span>
-              </button>
             </div>
           </div>
         </div>
@@ -328,7 +383,7 @@ const Calendar = () => {
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden flex">
-        {/* CalendaR/Main View */}
+        {/* Calendar/Main View */}
         <div className="flex-1 overflow-y-auto p-6">
           {viewMode === 'month' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -341,14 +396,12 @@ const Calendar = () => {
                 ))}
               </div>
 
-              {/* CalendaR Grid */}
+              {/* Calendar Grid */}
               <div className="grid grid-cols-7">
-                {/* Empty cells before first day */}
                 {Array.from({ length: startingDayOfWeek }).map((_, idx) => (
                   <div key={`empty-${idx}`} className="min-h-[120px] border-b border-r border-gray-200 bg-gray-50"></div>
                 ))}
 
-                {/* Days of month */}
                 {Array.from({ length: daysInMonth }).map((_, idx) => {
                   const day = idx + 1;
                   const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -368,19 +421,24 @@ const Calendar = () => {
                         {day}
                       </div>
                       <div className="space-y-1">
-                        {dayEvents.slice(0, 3).map((event) => (
-                          <div
-                            key={event.id}
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              setShowModal(true);
-                            }}
-                            className={`${event.color} text-white text-xs p-1.5 rounded cursor-pointer hover:opacity-90 transition-opacity`}
-                          >
-                            <div className="font-medium truncate">{event.title}</div>
-                            <div className="opacity-90">{event.startTime}</div>
-                          </div>
-                        ))}
+                        {dayEvents.slice(0, 3).map((event) => {
+                          const eventType = eventTypes.find(t => t.id === event.event_type);
+                          return (
+                            <div
+                              key={event.id}
+                              onClick={() => {
+                                setSelectedEvent(event);
+                                setShowModal(true);
+                              }}
+                              className={`${eventType?.color || 'bg-gray-500'} text-white text-xs p-1.5 rounded cursor-pointer hover:opacity-90 transition-opacity`}
+                            >
+                              <div className="font-medium truncate">{event.title}</div>
+                              <div className="opacity-90">
+                                {new Date(event.start_datetime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                          );
+                        })}
                         {dayEvents.length > 3 && (
                           <div className="text-xs text-gray-600 pl-1.5">
                             +{dayEvents.length - 3} mais
@@ -397,10 +455,10 @@ const Calendar = () => {
           {viewMode === 'agenda' && (
             <div className="space-y-4">
               {events
-                .sort((a, b) => new Date(a.date + ' ' + a.startTime) - new Date(b.date + ' ' + b.startTime))
+                .sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime))
                 .map((event) => {
-                  const eventType = eventTypes.find(t => t.id === event.type);
-                  const EventIcon = eventType?.icon || CalendaR;
+                  const eventType = eventTypes.find(t => t.id === event.event_type);
+                  const EventIcon = eventType?.icon || CalendarIcon;
                   
                   return (
                     <div
@@ -414,20 +472,20 @@ const Calendar = () => {
                       <div className="flex items-start gap-4">
                         <div className="flex flex-col items-center min-w-[60px]">
                           <div className="text-sm font-medium text-gray-600">
-                            {new Date(event.date).toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase()}
+                            {new Date(event.start_datetime).toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase()}
                           </div>
                           <div className="text-3xl font-bold text-gray-800">
-                            {new Date(event.date).getDate()}
+                            {new Date(event.start_datetime).getDate()}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {new Date(event.date).toLocaleDateString('pt-BR', { month: 'short' })}
+                            {new Date(event.start_datetime).toLocaleDateString('pt-BR', { month: 'short' })}
                           </div>
                         </div>
 
                         <div className="flex-1">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 ${event.color} rounded-lg`}>
+                              <div className={`p-2 ${eventType?.color || 'bg-gray-500'} rounded-lg`}>
                                 <EventIcon className="text-white" size={20} />
                               </div>
                               <div>
@@ -435,33 +493,25 @@ const Calendar = () => {
                                 <span className="text-sm text-gray-600">{eventType?.name}</span>
                               </div>
                             </div>
-                            <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                              <MoreVertical size={18} className="text-gray-400" />
-                            </button>
                           </div>
 
-                          <p className="text-gray-600 mb-3">{event.description}</p>
+                          {event.description && (
+                            <p className="text-gray-600 mb-3">{event.description}</p>
+                          )}
 
                           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                             <div className="flex items-center gap-1">
                               <Clock size={14} />
-                              <span>{event.startTime} - {event.endTime}</span>
+                              <span>
+                                {new Date(event.start_datetime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                {' - '}
+                                {new Date(event.end_datetime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin size={14} />
-                              <span>{event.location}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users size={14} />
-                              <span>{event.attendees} participantes</span>
-                            </div>
-                            {event.recurring !== 'none' && (
+                            {event.location && (
                               <div className="flex items-center gap-1">
-                                <Repeat size={14} />
-                                <span>
-                                  {event.recurring === 'weekly' ? 'Semanal' : 
-                                   event.recurring === 'monthly' ? 'Mensal' : 'Anual'}
-                                </span>
+                                <MapPin size={14} />
+                                <span>{event.location}</span>
                               </div>
                             )}
                           </div>
@@ -470,6 +520,14 @@ const Calendar = () => {
                     </div>
                   );
                 })}
+              
+              {events.length === 0 && (
+                <div className="text-center py-12">
+                  <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">Nenhum evento cadastrado</p>
+                  <p className="text-gray-400 text-sm mt-2">Clique em "Novo Evento" para começar</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -480,8 +538,8 @@ const Calendar = () => {
           
           <div className="space-y-3 mb-6">
             {upcomingEvents.map((event) => {
-              const eventType = eventTypes.find(t => t.id === event.type);
-              const EventIcon = eventType?.icon || CalendaR;
+              const eventType = eventTypes.find(t => t.id === event.event_type);
+              const EventIcon = eventType?.icon || CalendarIcon;
               
               return (
                 <div
@@ -493,30 +551,36 @@ const Calendar = () => {
                   className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer border border-gray-200"
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 ${event.color} rounded-lg`}>
+                    <div className={`p-2 ${eventType?.color || 'bg-gray-500'} rounded-lg`}>
                       <EventIcon className="text-white" size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-800 text-sm truncate">{event.title}</h4>
                       <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
                         <Clock size={12} />
-                        <span>{new Date(event.date).toLocaleDateString('pt-BR')}</span>
+                        <span>{new Date(event.start_datetime).toLocaleDateString('pt-BR')}</span>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-gray-600">
-                        <span>{event.startTime}</span>
+                        <span>
+                          {new Date(event.start_datetime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+            
+            {upcomingEvents.length === 0 && (
+              <p className="text-sm text-gray-500 text-center py-4">Nenhum evento próximo</p>
+            )}
           </div>
 
           <h3 className="text-lg font-bold text-gray-800 mb-4">Tipos de Eventos</h3>
           <div className="space-y-2">
             {eventTypes.map((type) => {
               const TypeIcon = type.icon;
-              const count = events.filter(e => e.type === type.id).length;
+              const count = events.filter(e => e.event_type === type.id).length;
               
               return (
                 <div
@@ -541,20 +605,20 @@ const Calendar = () => {
       {showModal && selectedEvent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className={`p-6 border-b border-gray-200 ${selectedEvent.color} bg-opacity-10`}>
+            <div className={`p-6 border-b border-gray-200 ${eventTypes.find(t => t.id === selectedEvent.event_type)?.color || 'bg-gray-500'} bg-opacity-10`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`w-16 h-16 ${selectedEvent.color} rounded-lg flex items-center justify-center`}>
+                  <div className={`w-16 h-16 ${eventTypes.find(t => t.id === selectedEvent.event_type)?.color || 'bg-gray-500'} rounded-lg flex items-center justify-center`}>
                     {(() => {
-                      const eventType = eventTypes.find(t => t.id === selectedEvent.type);
-                      const EventIcon = eventType?.icon || CalendaR;
+                      const eventType = eventTypes.find(t => t.id === selectedEvent.event_type);
+                      const EventIcon = eventType?.icon || CalendarIcon;
                       return <EventIcon className="text-white" size={28} />;
                     })()}
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-gray-800">{selectedEvent.title}</h2>
                     <p className="text-sm text-gray-600 mt-1">
-                      {eventTypes.find(t => t.id === selectedEvent.type)?.name}
+                      {eventTypes.find(t => t.id === selectedEvent.event_type)?.name}
                     </p>
                   </div>
                 </div>
@@ -569,19 +633,21 @@ const Calendar = () => {
 
             <div className="flex-1 overflow-y-auto p-6">
               <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Descrição</h3>
-                  <p className="text-gray-600">{selectedEvent.description}</p>
-                </div>
+                {selectedEvent.description && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Descrição</h3>
+                    <p className="text-gray-600">{selectedEvent.description}</p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-gray-600 text-sm mb-1">
-                      <CalendaR size={16} />
+                      <CalendarIcon size={16} />
                       <span className="font-medium">Data</span>
                     </div>
                     <p className="text-gray-800 font-medium">
-                      {new Date(selectedEvent.date).toLocaleDateString('pt-BR', { 
+                      {new Date(selectedEvent.start_datetime).toLocaleDateString('pt-BR', { 
                         weekday: 'long', 
                         year: 'numeric', 
                         month: 'long', 
@@ -596,57 +662,32 @@ const Calendar = () => {
                       <span className="font-medium">Horário</span>
                     </div>
                     <p className="text-gray-800 font-medium">
-                      {selectedEvent.startTime} - {selectedEvent.endTime}
+                      {new Date(selectedEvent.start_datetime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      {' - '}
+                      {new Date(selectedEvent.end_datetime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-gray-600 text-sm mb-1">
-                      <MapPin size={16} />
-                      <span className="font-medium">Local</span>
+                  {selectedEvent.location && (
+                    <div className="bg-gray-50 rounded-lg p-4 col-span-2">
+                      <div className="flex items-center gap-2 text-gray-600 text-sm mb-1">
+                        <MapPin size={16} />
+                        <span className="font-medium">Local</span>
+                      </div>
+                      <p className="text-gray-800 font-medium">{selectedEvent.location}</p>
                     </div>
-                    <p className="text-gray-800 font-medium">{selectedEvent.location}</p>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-gray-600 text-sm mb-1">
-                      <Users size={16} />
-                      <span className="font-medium">Participantes</span>
-                    </div>
-                    <p className="text-gray-800 font-medium">{selectedEvent.attendees} pessoas</p>
-                  </div>
+                  )}
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-gray-600 text-sm mb-2">
-                    <Users size={16} />
-                    <span className="font-medium">Responsável</span>
-                  </div>
-                  <p className="text-gray-800 font-medium">{selectedEvent.responsible}</p>
-                </div>
-
-                {selectedEvent.recurring !== 'none' && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-blue-700 text-sm mb-1">
-                      <Repeat size={16} />
-                      <span className="font-medium">Evento Recorrente</span>
-                    </div>
-                    <p className="text-blue-800">
-                      Este evento se repete {
-                        selectedEvent.recurring === 'weekly' ? 'semanalmente' : 
-                        selectedEvent.recurring === 'monthly' ? 'mensalmente' : 'anualmente'
-                      }
-                    </p>
-                  </div>
-                )}
-
-                {selectedEvent.reminder && (
+                {selectedEvent.reminder_minutes && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-yellow-700 text-sm mb-1">
                       <Bell size={16} />
                       <span className="font-medium">Lembrete</span>
                     </div>
-                    <p className="text-yellow-800">Notificação: {selectedEvent.reminder}</p>
+                    <p className="text-yellow-800">
+                      {selectedEvent.reminder_minutes} minutos antes
+                    </p>
                   </div>
                 )}
               </div>
@@ -660,11 +701,17 @@ const Calendar = () => {
                 >
                   Fechar
                 </button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
+                <button 
+                  onClick={() => openEditModal(selectedEvent)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                >
                   <Edit size={18} />
                   Editar
                 </button>
-                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2">
+                <button 
+                  onClick={() => handleDelete(selectedEvent.id)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2"
+                >
                   <Trash2 size={18} />
                   Excluir
                 </button>
@@ -674,7 +721,7 @@ const Calendar = () => {
         </div>
       )}
 
-      {/* New Event Modal */}
+      {/* New/Edit Event Modal */}
       {showNewEventModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -682,15 +729,22 @@ const Calendar = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg flex items-center justify-center">
-                    <Plus className="text-white" size={24} />
+                    {isEditing ? <Edit className="text-white" size={24} /> : <Plus className="text-white" size={24} />}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Novo Evento</h2>
-                    <p className="text-sm text-gray-600">Adicione um novo evento ao calendário</p>
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      {isEditing ? 'Editar Evento' : 'Novo Evento'}
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      {isEditing ? 'Atualize as informações do evento' : 'Adicione um novo evento ao calendário'}
+                    </p>
                   </div>
                 </div>
                 <button 
-                  onClick={() => setShowNewEventModal(false)}
+                  onClick={() => {
+                    setShowNewEventModal(false);
+                    resetForm();
+                  }}
                   className="p-2 hover:bg-white rounded-lg transition-colors"
                 >
                   <X size={24} />
@@ -698,7 +752,7 @@ const Calendar = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <form onSubmit={isEditing ? handleUpdate : handleCreate} className="flex-1 overflow-y-auto p-6">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -706,74 +760,99 @@ const Calendar = () => {
                   </label>
                   <input
                     type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
                     placeholder="Ex: Culto de Celebração"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 ${
+                      errors.title ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.title && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                      <AlertCircle size={14} />
+                      {errors.title}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Tipo de Evento *
                   </label>
-                  <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white">
+                  <select 
+                    name="event_type"
+                    value={formData.event_type}
+                    onChange={handleInputChange}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white ${
+                      errors.event_type ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
                     <option value="">Selecione o tipo</option>
                     {eventTypes.map(type => (
                       <option key={type.id} value={type.id}>{type.name}</option>
                     ))}
                   </select>
+                  {errors.event_type && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                      <AlertCircle size={14} />
+                      {errors.event_type}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Data *
+                      Data e Hora de Início *
                     </label>
                     <input
-                      type="date"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      type="datetime-local"
+                      name="start_datetime"
+                      value={formData.start_datetime}
+                      onChange={handleInputChange}
+                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 ${
+                        errors.start_datetime ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
+                    {errors.start_datetime && (
+                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.start_datetime}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Recorrência
-                    </label>
-                    <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white">
-                      <option value="none">Não repete</option>
-                      <option value="daily">Diariamente</option>
-                      <option value="weekly">Semanalmente</option>
-                      <option value="monthly">Mensalmente</option>
-                      <option value="yearly">Anualmente</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Horário de Início *
+                      Data e Hora de Término *
                     </label>
                     <input
-                      type="time"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      type="datetime-local"
+                      name="end_datetime"
+                      value={formData.end_datetime}
+                      onChange={handleInputChange}
+                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 ${
+                        errors.end_datetime ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Horário de Término *
-                    </label>
-                    <input
-                      type="time"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-                    />
+                    {errors.end_datetime && (
+                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.end_datetime}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Local *
+                    Local
                   </label>
                   <input
                     type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
                     placeholder="Ex: Templo Principal"
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                   />
@@ -784,40 +863,25 @@ const Calendar = () => {
                     Descrição
                   </label>
                   <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
                     placeholder="Descreva o evento..."
                     rows={3}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Responsável
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Nome do responsável"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Nº de Participantes
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-                    />
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Lembrete
+                    Lembrete (minutos antes)
                   </label>
-                  <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white">
+                  <select 
+                    name="reminder_minutes"
+                    value={formData.reminder_minutes}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white"
+                  >
                     <option value="">Sem lembrete</option>
                     <option value="5">5 minutos antes</option>
                     <option value="15">15 minutos antes</option>
@@ -828,24 +892,50 @@ const Calendar = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <input type="checkbox" id="notification" className="rounded" />
-                  <label htmlFor="notification" className="text-sm text-gray-700">
-                    Enviar notificação para os participantes
+                  <input 
+                    type="checkbox" 
+                    id="all_day" 
+                    name="all_day"
+                    checked={formData.all_day}
+                    onChange={handleInputChange}
+                    className="rounded"
+                  />
+                  <label htmlFor="all_day" className="text-sm text-gray-700">
+                    Evento de dia inteiro
                   </label>
                 </div>
               </div>
-            </div>
+            </form>
 
             <div className="p-6 border-t border-gray-200 bg-gray-50">
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowNewEventModal(false)}
+                  type="button"
+                  onClick={() => {
+                    setShowNewEventModal(false);
+                    resetForm();
+                  }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                  disabled={submitting}
                 >
                   Cancelar
                 </button>
-                <button className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg hover:from-pink-700 hover:to-purple-700 transition-colors font-medium">
-                  Criar Evento
+                <button 
+                  onClick={isEditing ? handleUpdate : handleCreate}
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg hover:from-pink-700 hover:to-purple-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      {isEditing ? 'Atualizando...' : 'Criando...'}
+                    </>
+                  ) : (
+                    <>
+                      <Check size={18} />
+                      {isEditing ? 'Atualizar Evento' : 'Criar Evento'}
+                    </>
+                  )}
                 </button>
               </div>
             </div>
