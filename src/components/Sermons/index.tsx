@@ -53,88 +53,99 @@ const Sermons = () => {
     }
   };
 
-  // Criar sermão
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    setSubmitting(true);
+ // Substitua a função handleCreate no src/components/Sermons/index.tsx
 
-    try {
-      if (!formData.title.trim()) {
-        setErrors({ title: 'Título é obrigatório' });
-        setSubmitting(false);
-        return;
-      }
+const handleCreate = async (e) => {
+  e.preventDefault();
+  setErrors({});
+  setSubmitting(true);
 
-      const sermonData = {
-        title: formData.title,
-        scripture_reference: formData.scripture_reference || '',
-        sermon_date: formData.sermon_date || new Date().toISOString().split('T')[0],
-        content: formData.content || '',
-        notes: formData.notes || '',
-        tags: formData.tags,
-      };
-
-      const response = await api.post('/sermons/', sermonData);
-      
-      setSermons([response.data, ...sermons]);
-      setSelectedSermon(response.data);
-      setShowNewSermonModal(false);
-      resetForm();
-      alert('Sermão criado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao criar sermão:', error);
-      if (error.response?.data) {
-        setErrors(error.response.data);
-      } else {
-        alert('Erro ao criar sermão');
-      }
-    } finally {
+  try {
+    // Validação básica
+    if (!formData.title.trim()) {
+      setErrors({ title: 'Título é obrigatório' });
       setSubmitting(false);
+      return;
     }
-  };
 
-  // Atualizar sermão
-  const handleUpdate = async () => {
-    if (!selectedSermon) return;
+    // Preparar dados para envio
+    const sermonData = {
+      title: formData.title.trim(),
+      scripture_reference: formData.scripture_reference?.trim() || '',
+      sermon_date: formData.sermon_date || new Date().toISOString().split('T')[0],
+      content: formData.content || '',
+      notes: formData.notes || '',
+      tags: Array.isArray(formData.tags) ? formData.tags : [],
+      status: 'draft', // Adicionar status padrão
+    };
+
+    console.log('📤 Enviando sermão:', sermonData);
+
+    const response = await api.post('/sermons/', sermonData);
     
-    setSubmitting(true);
-    try {
-      const response = await api.put(`/sermons/${selectedSermon.id}/`, selectedSermon);
+    console.log('✅ Resposta da API:', response.data);
+    
+    setSermons([response.data, ...sermons]);
+    setSelectedSermon(response.data);
+    setShowNewSermonModal(false);
+    resetForm();
+    alert('Sermão criado com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro ao criar sermão:', error);
+    console.error('Detalhes:', error.response?.data);
+    
+    if (error.response?.data) {
+      setErrors(error.response.data);
       
-      setSermons(sermons.map(s => s.id === selectedSermon.id ? response.data : s));
-      setSelectedSermon(response.data);
-      alert('Sermão atualizado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao atualizar sermão:', error);
-      alert('Erro ao atualizar sermão');
-    } finally {
-      setSubmitting(false);
+      // Mostrar erros específicos
+      const errorMessages = Object.entries(error.response.data)
+        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+        .join('\n');
+      
+      alert(`Erro ao criar sermão:\n${errorMessages}`);
+    } else {
+      alert('Erro ao criar sermão. Verifique sua conexão.');
     }
-  };
+  } finally {
+    setSubmitting(false);
+  }
+};
 
-  // Deletar sermão
-  const handleDelete = async () => {
-    if (!sermonToDelete) return;
+// Também atualize handleUpdate
+const handleUpdate = async () => {
+  if (!selectedSermon) return;
+  
+  setSubmitting(true);
+  try {
+    // Preparar dados para atualização
+    const updateData = {
+      title: selectedSermon.title,
+      content: selectedSermon.content || '',
+      scripture_reference: selectedSermon.base_text || '',
+      sermon_date: selectedSermon.preached_date || selectedSermon.sermon_date,
+      theme: selectedSermon.theme || '',
+      category: selectedSermon.category || '',
+      status: selectedSermon.status || 'draft',
+      tags: selectedSermon.tags || [],
+    };
 
-    try {
-      await api.delete(`/sermons/${sermonToDelete.id}/`);
-      
-      const updatedSermons = sermons.filter(s => s.id !== sermonToDelete.id);
-      setSermons(updatedSermons);
-      
-      if (selectedSermon?.id === sermonToDelete.id) {
-        setSelectedSermon(updatedSermons[0] || null);
-      }
-      
-      setShowDeleteModal(false);
-      setSermonToDelete(null);
-      alert('Sermão excluído com sucesso!');
-    } catch (error) {
-      console.error('Erro ao excluir sermão:', error);
-      alert('Erro ao excluir sermão');
-    }
-  };
+    console.log('📤 Atualizando sermão:', updateData);
+
+    const response = await api.put(`/sermons/${selectedSermon.id}/`, updateData);
+    
+    console.log('✅ Sermão atualizado:', response.data);
+    
+    setSermons(sermons.map(s => s.id === selectedSermon.id ? response.data : s));
+    setSelectedSermon(response.data);
+    alert('Sermão atualizado com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro ao atualizar sermão:', error);
+    console.error('Detalhes:', error.response?.data);
+    alert('Erro ao atualizar sermão: ' + (error.response?.data?.detail || error.message));
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   // Duplicar sermão
   const handleDuplicate = async (sermon) => {

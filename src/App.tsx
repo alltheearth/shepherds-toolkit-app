@@ -18,6 +18,7 @@ import Library from './components/Library';
 import Auth from './components/Auth';
 import MainLayout from './components/layout/MainLayout';
 import ReadingPlan from './components/ReadingPlan';
+import DebugSermonAPI from './components/SermonAPITest';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
               </ProtectedRoute>
             }
           >
+            
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="/bible" element={<Bible />} />
             <Route path="/reading-plan" element={<ReadingPlan />} />
@@ -52,6 +54,7 @@ function App() {
             <Route path="finances" element={<Finances />} />
             <Route path="prayer" element={<Prayer />} />
             <Route path="library" element={<Library />} />
+            <Route path="/debug-sermons" element={<DebugSermonAPI />} />
           </Route>
 
           {/* Rota 404 */}
