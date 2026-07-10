@@ -2,12 +2,15 @@
 // Adicione isso no src/services/api.ts para ver todas as requisições
 
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse, AxiosError } from 'axios';
+import { isMockMode } from '../mocks/mockMode';
+import { createApiMockAdapter } from '../mocks/apiMockAdapter';
 
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  ...(isMockMode ? { adapter: createApiMockAdapter() } : {}),
 });
 
 // Interceptor MELHORADO para debug

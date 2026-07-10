@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { 
-  Users, Plus, Search, Filter, Download, Settings, Mail, Phone,
-  MapPin, Calendar, Heart, Award, TrendingUp, Eye, Edit, Trash2,
-  UserPlus, Gift, BookOpen, AlertCircle, CheckCircle, Clock,
-  MoreVertical, X, User, Cake, Home, Briefcase, GraduationCap
+import { useState } from 'react';
+import {
+  Users, Plus, Search, Filter, Download, Mail, Phone,
+  MapPin, Award, TrendingUp, Eye, Edit, Trash2,
+  UserPlus, Gift, BookOpen, AlertCircle, Cake, Home
 } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { Modal } from '../ui/Modal';
 
 const Members = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -180,38 +183,45 @@ const Members = () => {
       title: 'Total de Membros',
       value: members.filter(m => m.status === 'active').length,
       icon: Users,
-      color: 'bg-blue-50 text-blue-600',
+      tone: 'accent',
       change: '+5 este mês'
     },
     {
       title: 'Visitantes',
       value: members.filter(m => m.status === 'visitor').length,
       icon: UserPlus,
-      color: 'bg-green-50 text-green-600',
+      tone: 'success',
       change: '3 novos'
     },
     {
       title: 'Aniversariantes',
       value: 8,
       icon: Cake,
-      color: 'bg-pink-50 text-pink-600',
+      tone: 'danger',
       change: 'Este mês'
     },
     {
       title: 'Frequência Média',
       value: '87%',
       icon: TrendingUp,
-      color: 'bg-purple-50 text-purple-600',
+      tone: 'warning',
       change: '+3% vs mês anterior'
     },
   ];
 
+  const statToneClasses = {
+    accent: 'bg-accent-soft text-accent-hover dark:text-ink',
+    success: 'bg-success-soft text-success',
+    warning: 'bg-warning-soft text-warning',
+    danger: 'bg-danger-soft text-danger',
+  };
+
   const getStatusBadge = (status) => {
     const badges = {
-      active: { text: 'Ativo', color: 'bg-green-100 text-green-700' },
-      inactive: { text: 'Inativo', color: 'bg-red-100 text-red-700' },
-      visitor: { text: 'Visitante', color: 'bg-blue-100 text-blue-700' },
-      newConvert: { text: 'Novo Convertido', color: 'bg-yellow-100 text-yellow-700' },
+      active: { text: 'Ativo', tone: 'success' },
+      inactive: { text: 'Inativo', tone: 'danger' },
+      visitor: { text: 'Visitante', tone: 'accent' },
+      newConvert: { text: 'Novo Convertido', tone: 'warning' },
     };
     return badges[status] || badges.active;
   };
@@ -227,8 +237,8 @@ const Members = () => {
     return age;
   };
 
-  const filteredMembers = activeTab === 'all' 
-    ? members 
+  const filteredMembers = activeTab === 'all'
+    ? members
     : activeTab === 'visitors'
     ? members.filter(m => m.status === 'visitor')
     : activeTab === 'inactive'
@@ -236,130 +246,105 @@ const Members = () => {
     : members.filter(m => m.status === 'active');
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+    <div className="flex-1 flex flex-col overflow-hidden bg-bg">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-surface border-b border-border">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <Users className="text-indigo-600" size={28} />
+            <div className="flex items-center gap-3">
+              <Users className="text-accent" size={24} />
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Gestão de Membros</h1>
-                <p className="text-sm text-gray-500">Gerencie membros, visitantes e acompanhamento pastoral</p>
+                <h1 className="text-lg font-semibold text-ink">Gestão de Membros</h1>
+                <p className="text-sm text-ink-faint">Gerencie membros, visitantes e acompanhamento pastoral</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
-                <Plus size={18} />
-                <span className="font-medium">Novo Membro</span>
-              </button>
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Download size={20} className="text-gray-600" />
-              </button>
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Settings size={20} className="text-gray-600" />
+            <div className="flex items-center gap-2">
+              <Button size="sm">
+                <Plus size={16} />
+                Novo Membro
+              </Button>
+              <button className="p-2 hover:bg-surface-hover rounded-md transition-colors">
+                <Download size={18} className="text-ink-muted" />
               </button>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
             {stats.map((stat, idx) => {
               const Icon = stat.icon;
               return (
-                <div key={idx} className="bg-gradient-to-br from-white to-gray-50 rounded-lg p-4 border border-gray-200 shadow-sm">
+                <Card key={idx} className="p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <div className={`p-2 rounded-lg ${stat.color}`}>
-                      <Icon size={20} />
+                    <div className={`p-1.5 rounded-md ${statToneClasses[stat.tone]}`}>
+                      <Icon size={16} />
                     </div>
-                    <span className="text-xs text-gray-500">{stat.change}</span>
+                    <span className="text-xs text-ink-faint">{stat.change}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
-                  <p className="text-sm text-gray-600">{stat.title}</p>
-                </div>
+                  <h3 className="text-xl font-semibold text-ink">{stat.value}</h3>
+                  <p className="text-sm text-ink-muted">{stat.title}</p>
+                </Card>
               );
             })}
           </div>
 
           {/* Tabs and Filters */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'all'
-                    ? 'bg-white text-gray-800 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Todos ({members.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('active')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'active'
-                    ? 'bg-white text-gray-800 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Ativos ({members.filter(m => m.status === 'active').length})
-              </button>
-              <button
-                onClick={() => setActiveTab('visitors')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'visitors'
-                    ? 'bg-white text-gray-800 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Visitantes ({members.filter(m => m.status === 'visitor').length})
-              </button>
-              <button
-                onClick={() => setActiveTab('inactive')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'inactive'
-                    ? 'bg-white text-gray-800 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Inativos ({members.filter(m => m.status === 'inactive').length})
-              </button>
+            <div className="flex items-center gap-1 bg-bg border border-border p-1 rounded-md">
+              {[
+                { id: 'all', label: `Todos (${members.length})` },
+                { id: 'active', label: `Ativos (${members.filter(m => m.status === 'active').length})` },
+                { id: 'visitors', label: `Visitantes (${members.filter(m => m.status === 'visitor').length})` },
+                { id: 'inactive', label: `Inativos (${members.filter(m => m.status === 'inactive').length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-ink-faint" size={16} />
                 <input
                   type="text"
                   placeholder="Buscar membros..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
+                  className="pl-9 pr-3 py-1.5 text-sm border border-border rounded-md bg-bg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent w-56 text-ink placeholder:text-ink-faint"
                 />
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <Filter size={18} />
-                <span>Filtros</span>
-              </button>
-              <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              <Button variant="secondary" size="sm">
+                <Filter size={16} />
+                Filtros
+              </Button>
+              <div className="flex gap-1 bg-bg border border-border p-1 rounded-md">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white shadow-sm' : ''}`}
+                  className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-surface shadow-sm' : ''}`}
                 >
                   <div className="w-4 h-4 grid grid-cols-2 gap-0.5">
-                    <div className="bg-gray-600 rounded-sm"></div>
-                    <div className="bg-gray-600 rounded-sm"></div>
-                    <div className="bg-gray-600 rounded-sm"></div>
-                    <div className="bg-gray-600 rounded-sm"></div>
+                    <div className="bg-ink-muted rounded-sm"></div>
+                    <div className="bg-ink-muted rounded-sm"></div>
+                    <div className="bg-ink-muted rounded-sm"></div>
+                    <div className="bg-ink-muted rounded-sm"></div>
                   </div>
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow-sm' : ''}`}
+                  className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-surface shadow-sm' : ''}`}
                 >
                   <div className="w-4 h-4 flex flex-col gap-1">
-                    <div className="h-1 bg-gray-600 rounded"></div>
-                    <div className="h-1 bg-gray-600 rounded"></div>
-                    <div className="h-1 bg-gray-600 rounded"></div>
+                    <div className="h-0.5 bg-ink-muted rounded"></div>
+                    <div className="h-0.5 bg-ink-muted rounded"></div>
+                    <div className="h-0.5 bg-ink-muted rounded"></div>
                   </div>
                 </button>
               </div>
@@ -376,60 +361,56 @@ const Members = () => {
             {filteredMembers.map((member) => {
               const statusBadge = getStatusBadge(member.status);
               return (
-                <div
+                <Card
                   key={member.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all cursor-pointer"
+                  className="p-4"
+                  hoverable
                   onClick={() => {
                     setSelectedMember(member);
                     setShowModal(true);
                   }}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-12 h-12 bg-accent text-accent-foreground rounded-full flex items-center justify-center text-sm font-semibold">
                       {member.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
                     </div>
-                    <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                      <MoreVertical size={18} className="text-gray-400" />
-                    </button>
                   </div>
 
-                  <h3 className="font-semibold text-gray-800 mb-1">{member.name}</h3>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mb-3 ${statusBadge.color}`}>
-                    {statusBadge.text}
-                  </span>
+                  <h3 className="font-medium text-ink mb-1 text-sm">{member.name}</h3>
+                  <Badge tone={statusBadge.tone} className="mb-3">{statusBadge.text}</Badge>
 
-                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <div className="space-y-1.5 text-sm text-ink-muted mb-3">
                     <div className="flex items-center gap-2">
-                      <Mail size={14} />
+                      <Mail size={13} />
                       <span className="truncate">{member.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Phone size={14} />
+                      <Phone size={13} />
                       <span>{member.phone}</span>
                     </div>
                     {member.ministry.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <Award size={14} />
+                        <Award size={13} />
                         <span className="truncate">{member.ministry.join(', ')}</span>
                       </div>
                     )}
                   </div>
 
                   {member.status === 'active' && (
-                    <div className="pt-3 border-t border-gray-200">
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <div className="pt-2.5 border-t border-border">
+                      <div className="flex items-center justify-between text-xs text-ink-faint mb-1">
                         <span>Frequência</span>
                         <span className="font-medium">{member.attendance}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div className="w-full bg-bg rounded-full h-1.5">
                         <div
-                          className="bg-indigo-500 h-1.5 rounded-full transition-all"
+                          className="bg-accent h-1.5 rounded-full transition-all"
                           style={{ width: `${member.attendance}%` }}
                         ></div>
                       </div>
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
@@ -437,38 +418,38 @@ const Members = () => {
 
         {/* List View */}
         {viewMode === 'list' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-bg border-b border-border">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Nome</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Contato</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Ministérios</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Frequência</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Última Visita</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Ações</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-faint uppercase">Nome</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-faint uppercase">Contato</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-faint uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-faint uppercase">Ministérios</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-faint uppercase">Frequência</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-ink-faint uppercase">Última Visita</th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-ink-faint uppercase">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-border">
                   {filteredMembers.map((member) => {
                     const statusBadge = getStatusBadge(member.status);
                     return (
-                      <tr key={member.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
+                      <tr key={member.id} className="hover:bg-surface-hover transition-colors">
+                        <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                            <div className="w-9 h-9 bg-accent text-accent-foreground rounded-full flex items-center justify-center text-xs font-semibold">
                               {member.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-800">{member.name}</p>
-                              <p className="text-sm text-gray-500">{calculateAge(member.birthdate)} anos</p>
+                              <p className="font-medium text-ink text-sm">{member.name}</p>
+                              <p className="text-xs text-ink-faint">{calculateAge(member.birthdate)} anos</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-600">
+                        <td className="px-6 py-3.5">
+                          <div className="text-sm text-ink-muted">
                             <p className="flex items-center gap-1">
                               <Mail size={12} />
                               {member.email}
@@ -479,64 +460,58 @@ const Members = () => {
                             </p>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-                            {statusBadge.text}
-                          </span>
+                        <td className="px-6 py-3.5">
+                          <Badge tone={statusBadge.tone}>{statusBadge.text}</Badge>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-3.5">
                           <div className="flex flex-wrap gap-1">
                             {member.ministry.slice(0, 2).map((min, idx) => (
-                              <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
-                                {min}
-                              </span>
+                              <Badge key={idx} tone="accent">{min}</Badge>
                             ))}
                             {member.ministry.length > 2 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                +{member.ministry.length - 2}
-                              </span>
+                              <Badge tone="neutral">+{member.ministry.length - 2}</Badge>
                             )}
                             {member.ministry.length === 0 && (
-                              <span className="text-sm text-gray-400">Nenhum</span>
+                              <span className="text-sm text-ink-faint">Nenhum</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-3.5">
                           {member.status === 'active' ? (
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-gray-200 rounded-full h-2 w-16">
+                              <div className="flex-1 bg-bg rounded-full h-1.5 w-16">
                                 <div
-                                  className="bg-indigo-500 h-2 rounded-full"
+                                  className="bg-accent h-1.5 rounded-full"
                                   style={{ width: `${member.attendance}%` }}
                                 ></div>
                               </div>
-                              <span className="text-sm font-medium text-gray-700">{member.attendance}%</span>
+                              <span className="text-sm font-medium text-ink-muted">{member.attendance}%</span>
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-400">-</span>
+                            <span className="text-sm text-ink-faint">-</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
+                        <td className="px-6 py-3.5 text-sm text-ink-muted">
                           {new Date(member.lastVisit).toLocaleDateString('pt-BR')}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <button 
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedMember(member);
                                 setShowModal(true);
                               }}
-                              className="p-2 hover:bg-gray-200 rounded transition-colors" 
+                              className="p-1.5 hover:bg-surface-hover rounded-md transition-colors"
                               title="Visualizar"
                             >
-                              <Eye size={16} className="text-gray-600" />
+                              <Eye size={15} className="text-ink-muted" />
                             </button>
-                            <button className="p-2 hover:bg-gray-200 rounded transition-colors" title="Editar">
-                              <Edit size={16} className="text-gray-600" />
+                            <button className="p-1.5 hover:bg-surface-hover rounded-md transition-colors" title="Editar">
+                              <Edit size={15} className="text-ink-muted" />
                             </button>
-                            <button className="p-2 hover:bg-red-100 rounded transition-colors" title="Excluir">
-                              <Trash2 size={16} className="text-red-600" />
+                            <button className="p-1.5 hover:bg-danger-soft rounded-md transition-colors" title="Excluir">
+                              <Trash2 size={15} className="text-danger" />
                             </button>
                           </div>
                         </td>
@@ -546,258 +521,237 @@ const Members = () => {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         )}
       </div>
 
       {/* Member Detail Modal */}
-      {showModal && selectedMember && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                    {selectedMember.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800">{selectedMember.name}</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(selectedMember.status).color}`}>
-                        {getStatusBadge(selectedMember.status).text}
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        Membro desde {new Date(selectedMember.memberSince).toLocaleDateString('pt-BR')}
-                      </span>
-                    </div>
-                  </div>
+      <Modal open={showModal && !!selectedMember} onClose={() => setShowModal(false)} maxWidth="max-w-4xl">
+        {selectedMember && (
+          <>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 bg-accent text-accent-foreground rounded-full flex items-center justify-center text-xl font-semibold">
+                {selectedMember.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-ink">{selectedMember.name}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge tone={getStatusBadge(selectedMember.status).tone}>{getStatusBadge(selectedMember.status).text}</Badge>
+                  <span className="text-sm text-ink-muted">
+                    Membro desde {new Date(selectedMember.memberSince).toLocaleDateString('pt-BR')}
+                  </span>
                 </div>
-                <button 
-                  onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-white rounded-lg transition-colors"
-                >
-                  <X size={24} />
-                </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                {/* Contact Information */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <Phone size={16} />
-                    Informações de Contato
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Mail size={14} />
-                      <span>{selectedMember.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Phone size={14} />
-                      <span>{selectedMember.phone}</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-gray-600">
-                      <MapPin size={14} className="mt-0.5" />
-                      <span>{selectedMember.address}</span>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {/* Contact Information */}
+              <div className="bg-bg border border-border rounded-md p-4">
+                <h3 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                  <Phone size={15} />
+                  Informações de Contato
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-ink-muted">
+                    <Mail size={13} />
+                    <span>{selectedMember.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-ink-muted">
+                    <Phone size={13} />
+                    <span>{selectedMember.phone}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-ink-muted">
+                    <MapPin size={13} className="mt-0.5" />
+                    <span>{selectedMember.address}</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Personal Information */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <User size={16} />
-                    Informações Pessoais
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Idade:</span>
-                      <span className="font-medium text-gray-800">{calculateAge(selectedMember.birthdate)} anos</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Data de Nascimento:</span>
-                      <span className="font-medium text-gray-800">{new Date(selectedMember.birthdate).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Estado Civil:</span>
-                      <span className="font-medium text-gray-800">{selectedMember.maritalStatus}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Ocupação:</span>
-                      <span className="font-medium text-gray-800">{selectedMember.occupation}</span>
-                    </div>
+              {/* Personal Information */}
+              <div className="bg-bg border border-border rounded-md p-4">
+                <h3 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                  <Users size={15} />
+                  Informações Pessoais
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-muted">Idade:</span>
+                    <span className="font-medium text-ink">{calculateAge(selectedMember.birthdate)} anos</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-muted">Data de Nascimento:</span>
+                    <span className="font-medium text-ink">{new Date(selectedMember.birthdate).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-muted">Estado Civil:</span>
+                    <span className="font-medium text-ink">{selectedMember.maritalStatus}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-muted">Ocupação:</span>
+                    <span className="font-medium text-ink">{selectedMember.occupation}</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Spiritual Information */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <BookOpen size={16} />
-                    Vida Espiritual
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    {selectedMember.baptismDate ? (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Batismo:</span>
-                        <span className="font-medium text-gray-800">{new Date(selectedMember.baptismDate).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Batismo:</span>
-                        <span className="font-medium text-orange-600">Não batizado</span>
-                      </div>
-                    )}
+              {/* Spiritual Information */}
+              <div className="bg-bg border border-border rounded-md p-4">
+                <h3 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                  <BookOpen size={15} />
+                  Vida Espiritual
+                </h3>
+                <div className="space-y-2 text-sm">
+                  {selectedMember.baptismDate ? (
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Célula:</span>
-                      <span className="font-medium text-gray-800">{selectedMember.cellGroup || 'Sem célula'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Última Visita:</span>
-                      <span className="font-medium text-gray-800">{new Date(selectedMember.lastVisit).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                    {selectedMember.status === 'active' && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Frequência:</span>
-                        <span className="font-medium text-gray-800">{selectedMember.attendance}%</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Ministry Information */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <Award size={16} />
-                    Ministérios
-                  </h3>
-                  {selectedMember.ministry.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedMember.ministry.map((min, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                          {min}
-                        </span>
-                      ))}
+                      <span className="text-ink-muted">Batismo:</span>
+                      <span className="font-medium text-ink">{new Date(selectedMember.baptismDate).toLocaleDateString('pt-BR')}</span>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">Não participa de nenhum ministério</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-ink-muted">Batismo:</span>
+                      <span className="font-medium text-warning">Não batizado</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-muted">Célula:</span>
+                    <span className="font-medium text-ink">{selectedMember.cellGroup || 'Sem célula'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-muted">Última Visita:</span>
+                    <span className="font-medium text-ink">{new Date(selectedMember.lastVisit).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  {selectedMember.status === 'active' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-ink-muted">Frequência:</span>
+                      <span className="font-medium text-ink">{selectedMember.attendance}%</span>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Family Members */}
-              {selectedMember.familyMembers.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <Home size={16} />
-                    Família
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="space-y-2">
-                      {selectedMember.familyMembers.map((family, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                          <Users size={14} className="text-indigo-500" />
-                          <span>{family}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <AlertCircle size={16} />
-                  Observações Pastorais
+              {/* Ministry Information */}
+              <div className="bg-bg border border-border rounded-md p-4">
+                <h3 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                  <Award size={15} />
+                  Ministérios
                 </h3>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-700">{selectedMember.notes}</p>
+                {selectedMember.ministry.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMember.ministry.map((min, idx) => (
+                      <Badge key={idx} tone="accent">{min}</Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-ink-faint">Não participa de nenhum ministério</p>
+                )}
+              </div>
+            </div>
+
+            {/* Family Members */}
+            {selectedMember.familyMembers.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                  <Home size={15} />
+                  Família
+                </h3>
+                <div className="bg-bg border border-border rounded-md p-4">
+                  <div className="space-y-2">
+                    {selectedMember.familyMembers.map((family, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm text-ink">
+                        <Users size={13} className="text-accent" />
+                        <span>{family}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Frequency Chart */}
-              {selectedMember.status === 'active' && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <TrendingUp size={16} />
-                    Frequência nos Últimos Meses
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-end justify-between gap-2 h-32">
-                      {[85, 90, 88, 92, 87, 95].map((freq, idx) => (
-                        <div key={idx} className="flex-1 flex flex-col items-center gap-2">
-                          <div className="w-full bg-gray-200 rounded-t relative" style={{ height: '100px' }}>
-                            <div
-                              className="absolute bottom-0 w-full bg-indigo-500 rounded-t hover:bg-indigo-600 transition-colors"
-                              style={{ height: `${freq}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-600">
-                            {['Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov'][idx]}
-                          </span>
+            {/* Notes */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                <AlertCircle size={15} />
+                Observações Pastorais
+              </h3>
+              <div className="bg-warning-soft border border-border rounded-md p-4">
+                <p className="text-sm text-ink">{selectedMember.notes}</p>
+              </div>
+            </div>
+
+            {/* Frequency Chart */}
+            {selectedMember.status === 'active' && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                  <TrendingUp size={15} />
+                  Frequência nos Últimos Meses
+                </h3>
+                <div className="bg-bg border border-border rounded-md p-4">
+                  <div className="flex items-end justify-between gap-2 h-32">
+                    {[85, 90, 88, 92, 87, 95].map((freq, idx) => (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-2">
+                        <div className="w-full bg-surface-hover rounded-t relative" style={{ height: '100px' }}>
+                          <div
+                            className="absolute bottom-0 w-full bg-accent rounded-t"
+                            style={{ height: `${freq}%` }}
+                          ></div>
                         </div>
-                      ))}
-                    </div>
+                        <span className="text-xs text-ink-faint">
+                          {['Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov'][idx]}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
-
-              {/* Action Suggestions for Inactive/Visitors */}
-              {(selectedMember.status === 'inactive' || selectedMember.status === 'visitor') && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <Heart size={16} />
-                    Ações Sugeridas
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <button className="flex items-center gap-2 p-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-sm">
-                      <Phone size={16} />
-                      <span>Fazer Contato Telefônico</span>
-                    </button>
-                    <button className="flex items-center gap-2 p-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors text-sm">
-                      <Home size={16} />
-                      <span>Agendar Visita Pastoral</span>
-                    </button>
-                    <button className="flex items-center gap-2 p-3 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg transition-colors text-sm">
-                      <Heart size={16} />
-                      <span>Adicionar à Lista de Oração</span>
-                    </button>
-                    <button className="flex items-center gap-2 p-3 bg-pink-50 hover:bg-pink-100 text-pink-700 rounded-lg transition-colors text-sm">
-                      <Gift size={16} />
-                      <span>Enviar Mensagem de Incentivo</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors font-medium"
-                >
-                  Fechar
-                </button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
-                  <Mail size={18} />
-                  Enviar Email
-                </button>
-                <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2">
-                  <Phone size={18} />
-                  Ligar
-                </button>
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2">
-                  <Edit size={18} />
-                  Editar
-                </button>
               </div>
+            )}
+
+            {/* Action Suggestions for Inactive/Visitors */}
+            {(selectedMember.status === 'inactive' || selectedMember.status === 'visitor') && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+                  <AlertCircle size={15} />
+                  Ações Sugeridas
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <button className="flex items-center gap-2 p-2.5 bg-accent-soft text-accent-hover dark:text-ink rounded-md text-sm hover:opacity-80 transition-opacity">
+                    <Phone size={15} />
+                    <span>Fazer Contato Telefônico</span>
+                  </button>
+                  <button className="flex items-center gap-2 p-2.5 bg-success-soft text-success rounded-md text-sm hover:opacity-80 transition-opacity">
+                    <Home size={15} />
+                    <span>Agendar Visita Pastoral</span>
+                  </button>
+                  <button className="flex items-center gap-2 p-2.5 bg-danger-soft text-danger rounded-md text-sm hover:opacity-80 transition-opacity">
+                    <Award size={15} />
+                    <span>Adicionar à Lista de Oração</span>
+                  </button>
+                  <button className="flex items-center gap-2 p-2.5 bg-warning-soft text-warning rounded-md text-sm hover:opacity-80 transition-opacity">
+                    <Gift size={15} />
+                    <span>Enviar Mensagem de Incentivo</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4 border-t border-border">
+              <Button variant="secondary" className="flex-1" onClick={() => setShowModal(false)}>
+                Fechar
+              </Button>
+              <Button variant="secondary">
+                <Mail size={16} />
+                Email
+              </Button>
+              <Button variant="secondary">
+                <Phone size={16} />
+                Ligar
+              </Button>
+              <Button>
+                <Edit size={16} />
+                Editar
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -3,6 +3,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import authService from '../../services/authService';
 import type { BibleBook, BibleVerse, HighlightColor, ChapterNavigation } from '../../types/bible.types';
+import { isMockMode } from '../../mocks/mockMode';
+import { createMockBaseQuery, type RtkMockRoute } from '../../mocks/rtkMockBaseQuery';
+import { booksSeed, getVersesForChapter, setHighlight } from '../../mocks/bibleMockData';
 
 export interface BooksResponse { 
     "count": 66,
@@ -33,18 +36,38 @@ export interface HighlightPayload {
     is_favorite?: boolean;
 }
 
+const bibleMockRoutes: RtkMockRoute[] = [
+    {
+        test: (segments, method) => segments[0] === 'bible' && segments[1] === 'books' && method === 'GET',
+        handler: () => ({ count: booksSeed.length, next: null, previous: null, results: booksSeed }),
+    },
+    {
+        test: (segments, method) => segments[0] === 'bible' && segments[1] === 'verses' && method === 'GET',
+        handler: ({ params }) => {
+            const { results, navigation } = getVersesForChapter(params.book, params.chapter, params.version);
+            return { count: results.length, next: null, previous: null, results, chapter_navigation: navigation };
+        },
+    },
+    {
+        test: (segments, method) => segments[0] === 'bible' && segments[1] === 'highlights' && method === 'POST',
+        handler: ({ body }) => setHighlight(Number(body.verse), body.color, body.is_favorite),
+    },
+];
+
 export const bibleApi = createApi({
     reducerPath: 'bibleApi',
-    baseQuery: fetchBaseQuery({
-        baseUrl: import.meta.env.VITE_API_URL,
-        prepareHeaders: (headers) => {
-            const token = authService.getToken();
-            if (token) {
-                headers.set('Authorization', `Token ${token}`);
-            }
-            return headers;
-        },
-    }),
+    baseQuery: isMockMode
+        ? createMockBaseQuery(bibleMockRoutes)
+        : fetchBaseQuery({
+            baseUrl: import.meta.env.VITE_API_URL,
+            prepareHeaders: (headers) => {
+                const token = authService.getToken();
+                if (token) {
+                    headers.set('Authorization', `Token ${token}`);
+                }
+                return headers;
+            },
+        }),
     endpoints: (builder) => ({
         getBooks: builder.query<BooksResponse, void>({
             query: () => `/bible/books/`,

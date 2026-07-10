@@ -1,6 +1,7 @@
 // src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 // import MainLayout from './components/layout/MainLayout';
 // import AuthLayout from './components/layout/AuthLayout'; 
@@ -22,6 +23,7 @@ import DebugSermonAPI from './components/SermonAPITest';
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -62,6 +64,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 
