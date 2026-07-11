@@ -2,11 +2,13 @@ import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 import { createMockCollection } from './createMockCollection';
 import { sermonsSeed, type MockSermon } from './sermonsMockData';
 import { eventsSeed, type MockEvent } from './eventsMockData';
+import { searchBibleReferenceMock } from './bibleReferenceMock';
 
 type MockRouteContext = {
   method: string;
   segments: string[];
   body: any;
+  params: Record<string, any>;
 };
 
 type MockRoute = {
@@ -56,6 +58,11 @@ const routes: MockRoute[] = [
       return null;
     },
   },
+  {
+    test: (segments, method) =>
+      segments[0] === 'bible' && segments[1] === 'verses' && segments[2] === 'by_reference' && method === 'GET',
+    handler: ({ params }) => searchBibleReferenceMock(params?.q || '', params?.version || 'ACF'),
+  },
 ];
 
 const parseBody = (data: unknown) => {
@@ -97,7 +104,7 @@ export const createApiMockAdapter = (delay = 350): AxiosAdapter => {
         }
 
         try {
-          const data = route.handler({ method, segments, body });
+          const data = route.handler({ method, segments, body, params: config.params || {} });
           const response: AxiosResponse = {
             data,
             status: 200,

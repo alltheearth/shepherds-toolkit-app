@@ -54,3 +54,23 @@ body {
   background-color: var(--color-bg);
   color: var(--color-ink);
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .sermon-print-area,
+  .sermon-print-area * {
+    visibility: visible;
+  }
+  .sermon-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    background-color: #ffffff !important;
+    color: #18181b !important;
+  }
+}

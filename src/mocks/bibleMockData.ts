@@ -56,7 +56,7 @@ let highlightId = 1;
 const highlights = new Map<string, { id: string; color: HighlightColor; is_favorite: boolean; created_at: string }>();
 const highlightKey = (verseId: number) => String(verseId);
 
-const buildVerse = (book: BibleBook, chapter: number, verseNumber: number, version: string): BibleVerse => {
+export const buildVerse = (book: BibleBook, chapter: number, verseNumber: number, version: string): BibleVerse => {
   const id = book.id * 100000 + chapter * 1000 + verseNumber;
 
   let text = `Texto de exemplo de ${book.name} ${chapter}:${verseNumber} (versão ${version}), usado apenas para fins de demonstração da interface.`;
@@ -82,7 +82,7 @@ const buildVerse = (book: BibleBook, chapter: number, verseNumber: number, versi
   };
 };
 
-const verseCountFor = (book: BibleBook, chapter: number): number => {
+export const verseCountFor = (book: BibleBook, chapter: number): number => {
   if (book.abbrev === 'Gn' && chapter === 1) return 10;
   if (book.abbrev === 'Jo' && chapter === 3) return 21;
   return 12;
