@@ -29,7 +29,7 @@ const ScriptureCitationNode = Node.create({
     return {
       reference: { default: '' },
       text: { default: '' },
-      version: { default: 'ACF' },
+      version: { default: 'ALM1911' },
     };
   },
 

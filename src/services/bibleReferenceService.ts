@@ -21,7 +21,7 @@ export interface BibleReferenceSearchResponse {
 
 export const searchBibleReference = async (
   query: string,
-  version = 'ACF'
+  version = 'ALM1911'
 ): Promise<BibleReferenceSearchResponse> => {
   const response = await api.get<BibleReferenceSearchResponse>('/bible/verses/by_reference/', {
     params: { q: query, version },

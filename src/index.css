@@ -55,15 +55,60 @@ body {
   color: var(--color-ink);
 }
 
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1rem 0;
+  overflow: hidden;
+}
+
+.ProseMirror table td,
+.ProseMirror table th {
+  border: 1px solid var(--color-border-strong);
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  position: relative;
+}
+
+.ProseMirror table th {
+  background-color: var(--color-surface-hover);
+  font-weight: 600;
+  text-align: left;
+}
+
+.ProseMirror table .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent-soft);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.ProseMirror table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--color-accent);
+  pointer-events: none;
+}
+
 @media print {
   body * {
     visibility: hidden;
   }
-  .sermon-print-area,
-  .sermon-print-area * {
+  .writing-print-area,
+  .writing-print-area * {
     visibility: visible;
   }
-  .sermon-print-area {
+  .writing-print-area {
     position: absolute;
     left: 0;
     top: 0;

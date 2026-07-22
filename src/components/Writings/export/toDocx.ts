@@ -7,6 +7,10 @@ import {
   AlignmentType,
   ExternalHyperlink,
   BorderStyle,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
 } from 'docx';
 import { downloadBlob, sanitizeFilename } from './downloadBlob';
 
@@ -99,7 +103,33 @@ function walkInline(node: ChildNode, marks: MarkState, runs: InlineChild[]): voi
   el.childNodes.forEach((child) => walkInline(child, nextMarks, runs));
 }
 
-function walkBlock(node: ChildNode, paragraphs: Paragraph[], listContext: ListContext | null = null): void {
+type DocxBlock = Paragraph | Table;
+
+function cellParagraphs(cell: Element): Paragraph[] {
+  const out: Paragraph[] = [];
+  cell.childNodes.forEach((child) => walkBlock(child, out));
+  if (!out.length) out.push(new Paragraph({ children: [new TextRun('')] }));
+  return out;
+}
+
+function walkTable(tableEl: Element): Table {
+  const rows: TableRow[] = [];
+  tableEl.querySelectorAll('tr').forEach((tr) => {
+    const cells: TableCell[] = [];
+    tr.querySelectorAll('td, th').forEach((cell) => {
+      cells.push(
+        new TableCell({
+          children: cellParagraphs(cell as Element),
+          shading: cell.tagName === 'TH' ? { fill: 'F4F4F5' } : undefined,
+        })
+      );
+    });
+    if (cells.length) rows.push(new TableRow({ children: cells }));
+  });
+  return new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } });
+}
+
+function walkBlock(node: ChildNode, paragraphs: DocxBlock[], listContext: ListContext | null = null): void {
   if (node.nodeType !== Node.ELEMENT_NODE) {
     const text = node.textContent?.trim();
     if (text) paragraphs.push(new Paragraph({ children: [new TextRun(text)] }));
@@ -163,7 +193,7 @@ function walkBlock(node: ChildNode, paragraphs: Paragraph[], listContext: ListCo
         paragraphs.push(new Paragraph({ children: runs, bullet: { level: listContext.level } }));
       } else if (listContext?.type === 'number') {
         paragraphs.push(
-          new Paragraph({ children: runs, numbering: { reference: 'sermon-numbering', level: listContext.level } })
+          new Paragraph({ children: runs, numbering: { reference: 'writing-numbering', level: listContext.level } })
         );
       } else {
         paragraphs.push(new Paragraph({ children: runs }));
@@ -184,6 +214,11 @@ function walkBlock(node: ChildNode, paragraphs: Paragraph[], listContext: ListCo
       paragraphs.push(new Paragraph({ children: [new TextRun({ text, font: 'Courier New' })] }));
       break;
     }
+    case 'TABLE': {
+      paragraphs.push(walkTable(el));
+      paragraphs.push(new Paragraph({ text: '' }));
+      break;
+    }
     default: {
       const before = paragraphs.length;
       el.childNodes.forEach((c) => {
@@ -197,39 +232,39 @@ function walkBlock(node: ChildNode, paragraphs: Paragraph[], listContext: ListCo
   }
 }
 
-export interface SermonExportMeta {
+export interface WritingExportMeta {
   title: string;
-  scripture_reference?: string;
-  sermon_date?: string;
+  base_text?: string;
+  preached_date?: string;
 }
 
-export interface SermonExportStyle {
+export interface WritingExportStyle {
   fontFamily?: string;
   fontSize?: number;
 }
 
-export async function exportSermonToDocx(
-  sermon: SermonExportMeta,
+export async function exportWritingToDocx(
+  writing: WritingExportMeta,
   html: string,
-  style: SermonExportStyle = {}
+  style: WritingExportStyle = {}
 ): Promise<void> {
   const parsed = new DOMParser().parseFromString(html, 'text/html');
 
-  const bodyParagraphs: Paragraph[] = [];
+  const bodyParagraphs: DocxBlock[] = [];
   parsed.body.childNodes.forEach((node) => walkBlock(node, bodyParagraphs));
 
   const headerParagraphs: Paragraph[] = [
     new Paragraph({
       heading: HeadingLevel.HEADING_1,
-      children: [new TextRun({ text: sermon.title || 'Sermão sem título' })],
+      children: [new TextRun({ text: writing.title || 'Escrito sem título' })],
     }),
-    ...(sermon.scripture_reference
-      ? [new Paragraph({ children: [new TextRun({ text: sermon.scripture_reference, italics: true })] })]
+    ...(writing.base_text
+      ? [new Paragraph({ children: [new TextRun({ text: writing.base_text, italics: true })] })]
       : []),
-    ...(sermon.sermon_date
+    ...(writing.preached_date
       ? [
           new Paragraph({
-            children: [new TextRun({ text: new Date(sermon.sermon_date).toLocaleDateString('pt-BR'), color: '888888' })],
+            children: [new TextRun({ text: new Date(writing.preached_date).toLocaleDateString('pt-BR'), color: '888888' })],
           }),
         ]
       : []),
@@ -240,7 +275,7 @@ export async function exportSermonToDocx(
     numbering: {
       config: [
         {
-          reference: 'sermon-numbering',
+          reference: 'writing-numbering',
           levels: [
             { level: 0, format: 'decimal', text: '%1.', alignment: AlignmentType.START },
             { level: 1, format: 'decimal', text: '%1.%2.', alignment: AlignmentType.START },
@@ -262,5 +297,5 @@ export async function exportSermonToDocx(
   });
 
   const blob = await Packer.toBlob(document);
-  downloadBlob(blob, `${sanitizeFilename(sermon.title)}.docx`);
+  downloadBlob(blob, `${sanitizeFilename(writing.title)}.docx`);
 }
