@@ -10,5 +10,5 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export function sanitizeFilename(name: string): string {
-  return (name || 'sermao').trim().replace(/[^\w\-]+/g, '_').replace(/_+/g, '_');
+  return (name || 'escrito').trim().replace(/[^\w\-]+/g, '_').replace(/_+/g, '_');
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
-const DebugSermonAPI = () => {
+const DebugWritingAPI = () => {
   const [results, setResults] = useState([]);
   const [testing, setTesting] = useState(false);
 
@@ -32,53 +32,54 @@ const DebugSermonAPI = () => {
         addResult('User', false, 'Usuário não encontrado no localStorage');
       }
 
-      // Teste 3: Listar Sermões
+      // Teste 3: Listar Escritos
       try {
-        const listResponse = await fetch(`${import.meta.env.VITE_API_URL}/sermons/`, {
+        const listResponse = await fetch(`${import.meta.env.VITE_API_URL}/writings/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
+
         if (listResponse.ok) {
           const data = await listResponse.json();
-          const sermons = data.results || data;
-          addResult('Listar Sermões', true, `${sermons.length} sermões encontrados`, sermons);
+          const writings = data.results || data;
+          addResult('Listar Escritos', true, `${writings.length} escritos encontrados`, writings);
         } else {
           const error = await listResponse.text();
-          addResult('Listar Sermões', false, `Erro ${listResponse.status}: ${error}`);
+          addResult('Listar Escritos', false, `Erro ${listResponse.status}: ${error}`);
         }
       } catch (error) {
-        addResult('Listar Sermões', false, error.message);
+        addResult('Listar Escritos', false, error.message);
       }
 
-      // Teste 4: Criar Sermão
-      const testSermon = {
+      // Teste 4: Criar Escrito
+      const testWriting = {
         title: `Teste Debug ${Date.now()}`,
         content: 'Conteúdo de teste',
-        scripture_reference: 'João 3:16',
-        sermon_date: new Date().toISOString().split('T')[0],
+        base_text: 'João 3:16',
+        preached_date: new Date().toISOString().split('T')[0],
+        type: 'sermao',
         tags: ['teste', 'debug'],
         status: 'draft'
       };
 
       try {
-        const createResponse = await fetch(`${import.meta.env.VITE_API_URL}/sermons/`, {
+        const createResponse = await fetch(`${import.meta.env.VITE_API_URL}/writings/`, {
           method: 'POST',
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(testSermon)
+          body: JSON.stringify(testWriting)
         });
 
         if (createResponse.ok) {
           const created = await createResponse.json();
-          addResult('Criar Sermão', true, `Sermão criado com ID: ${created.id}`, created);
+          addResult('Criar Escrito', true, `Escrito criado com ID: ${created.id}`, created);
 
           // Teste 5: Verificar se foi salvo
-          const verifyResponse = await fetch(`${import.meta.env.VITE_API_URL}/sermons/${created.id}/`, {
+          const verifyResponse = await fetch(`${import.meta.env.VITE_API_URL}/writings/${created.id}/`, {
             headers: {
               'Authorization': `Token ${token}`,
               'Content-Type': 'application/json'
@@ -87,10 +88,10 @@ const DebugSermonAPI = () => {
 
           if (verifyResponse.ok) {
             const verified = await verifyResponse.json();
-            addResult('Verificar Sermão', true, 'Sermão encontrado no banco!', verified);
+            addResult('Verificar Escrito', true, 'Escrito encontrado no banco!', verified);
 
-            // Teste 6: Deletar sermão de teste
-            const deleteResponse = await fetch(`${import.meta.env.VITE_API_URL}/sermons/${created.id}/`, {
+            // Teste 6: Deletar escrito de teste
+            const deleteResponse = await fetch(`${import.meta.env.VITE_API_URL}/writings/${created.id}/`, {
               method: 'DELETE',
               headers: {
                 'Authorization': `Token ${token}`,
@@ -99,19 +100,19 @@ const DebugSermonAPI = () => {
             });
 
             if (deleteResponse.ok) {
-              addResult('Deletar Sermão', true, 'Sermão de teste deletado com sucesso');
+              addResult('Deletar Escrito', true, 'Escrito de teste deletado com sucesso');
             } else {
-              addResult('Deletar Sermão', false, `Erro ao deletar: ${deleteResponse.status}`);
+              addResult('Deletar Escrito', false, `Erro ao deletar: ${deleteResponse.status}`);
             }
           } else {
-            addResult('Verificar Sermão', false, 'Sermão NÃO encontrado após criação!');
+            addResult('Verificar Escrito', false, 'Escrito NÃO encontrado após criação!');
           }
         } else {
           const error = await createResponse.text();
-          addResult('Criar Sermão', false, `Erro ${createResponse.status}: ${error}`);
+          addResult('Criar Escrito', false, `Erro ${createResponse.status}: ${error}`);
         }
       } catch (error) {
-        addResult('Criar Sermão', false, error.message);
+        addResult('Criar Escrito', false, error.message);
       }
 
     } catch (error) {
@@ -126,14 +127,14 @@ const DebugSermonAPI = () => {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">
-            🔍 Debug - API de Sermões
+            🔍 Debug - API de Escritos
           </h1>
-          
+
           <div className="mb-6">
             <p className="text-gray-600 mb-4">
-              Este componente testa toda a cadeia de autenticação e CRUD de sermões.
+              Este componente testa toda a cadeia de autenticação e CRUD de escritos.
             </p>
-            
+
             <button
               onClick={runTests}
               disabled={testing}
@@ -153,13 +154,13 @@ const DebugSermonAPI = () => {
           {results.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-gray-800">Resultados:</h2>
-              
+
               {results.map((result, index) => (
                 <div
                   key={index}
                   className={`p-4 rounded-lg border-2 ${
-                    result.success 
-                      ? 'bg-green-50 border-green-200' 
+                    result.success
+                      ? 'bg-green-50 border-green-200'
                       : 'bg-red-50 border-red-200'
                   }`}
                 >
@@ -169,7 +170,7 @@ const DebugSermonAPI = () => {
                     ) : (
                       <XCircle className="text-red-600 flex-shrink-0" size={24} />
                     )}
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-semibold text-gray-800">
@@ -177,11 +178,11 @@ const DebugSermonAPI = () => {
                         </h3>
                         <span className="text-xs text-gray-500">{result.time}</span>
                       </div>
-                      
+
                       <p className={result.success ? 'text-green-700' : 'text-red-700'}>
                         {result.message}
                       </p>
-                      
+
                       {result.data && (
                         <details className="mt-2">
                           <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
@@ -212,7 +213,7 @@ const DebugSermonAPI = () => {
           <ul className="text-sm text-yellow-700 space-y-1">
             <li>• Certifique-se de estar logado antes de executar os testes</li>
             <li>• Verifique se a API está rodando em: {import.meta.env.VITE_API_URL}</li>
-            <li>• Os testes criarão e deletarão um sermão de teste automaticamente</li>
+            <li>• Os testes criarão e deletarão um escrito de teste automaticamente</li>
             <li>• Abra o Console do navegador (F12) para ver logs detalhados</li>
           </ul>
         </div>
@@ -221,4 +222,4 @@ const DebugSermonAPI = () => {
   );
 };
 
-export default DebugSermonAPI;
+export default DebugWritingAPI;

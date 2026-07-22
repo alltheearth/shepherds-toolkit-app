@@ -1,6 +1,7 @@
 import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { createMockCollection } from './createMockCollection';
-import { sermonsSeed, type MockSermon } from './sermonsMockData';
+import { writingsSeed } from './writingsMockData';
+import type { Writing } from '../types/writing.types';
 import { eventsSeed, type MockEvent } from './eventsMockData';
 import { searchBibleReferenceMock } from './bibleReferenceMock';
 
@@ -16,26 +17,26 @@ type MockRoute = {
   handler: (ctx: MockRouteContext) => any;
 };
 
-const sermons = createMockCollection<MockSermon>(sermonsSeed);
+const writings = createMockCollection<Writing>(writingsSeed);
 const events = createMockCollection<MockEvent>(eventsSeed);
 
 const routes: MockRoute[] = [
   {
-    test: (segments, method) => segments[0] === 'sermons' && segments.length === 1 && method === 'GET',
-    handler: () => ({ results: sermons.list() }),
+    test: (segments, method) => segments[0] === 'writings' && segments.length === 1 && method === 'GET',
+    handler: () => ({ results: writings.list() }),
   },
   {
-    test: (segments, method) => segments[0] === 'sermons' && segments.length === 1 && method === 'POST',
-    handler: ({ body }) => sermons.create(body),
+    test: (segments, method) => segments[0] === 'writings' && segments.length === 1 && method === 'POST',
+    handler: ({ body }) => writings.create(body),
   },
   {
-    test: (segments, method) => segments[0] === 'sermons' && segments.length === 2 && (method === 'PUT' || method === 'PATCH'),
-    handler: ({ segments, body }) => sermons.update(segments[1], body),
+    test: (segments, method) => segments[0] === 'writings' && segments.length === 2 && (method === 'PUT' || method === 'PATCH'),
+    handler: ({ segments, body }) => writings.update(segments[1], body),
   },
   {
-    test: (segments, method) => segments[0] === 'sermons' && segments.length === 2 && method === 'DELETE',
+    test: (segments, method) => segments[0] === 'writings' && segments.length === 2 && method === 'DELETE',
     handler: ({ segments }) => {
-      sermons.remove(segments[1]);
+      writings.remove(segments[1]);
       return null;
     },
   },

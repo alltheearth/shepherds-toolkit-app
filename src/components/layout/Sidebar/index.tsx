@@ -1,6 +1,6 @@
-import { Book, BookMarked, BookOpen, Calendar, DollarSign, FileText, Heart, Menu, Moon, Sun, Target, User, Users, X } from "lucide-react";
+import { Book, BookMarked, BookOpen, Calendar, CreditCard, DollarSign, FileText, Heart, Menu, Moon, Settings, Sun, Target, User, Users, X } from "lucide-react";
 import { useState } from "react";
-import { setActiveModule } from "../../../Feature/ModuleActiveSlice";
+import { setActiveModule } from "../../../feature/ModuleActiveSlice";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +20,7 @@ const Sidebar = () => {
     { id: 'dashboard', name: 'Dashboard', icon: Menu },
     { id: 'bible', name: 'Bíblia', icon: Book },
     { id: 'reading-plan', name: 'Plano de Leitura', icon: BookMarked },
-    { id: 'sermons', name: 'Sermões', icon: FileText },
+    { id: 'writings', name: 'Escritos', icon: FileText },
     { id: 'goals', name: 'Metas', icon: Target },
     { id: 'calendar', name: 'Agenda', icon: Calendar },
     { id: 'members', name: 'Membros', icon: Users },
@@ -74,8 +74,24 @@ const Sidebar = () => {
           })}
         </nav>
 
-        {/* Theme toggle + User Section */}
+        {/* Configurações + Theme toggle + User Section */}
         <div className="border-t border-border p-2 space-y-1">
+          <button
+            onClick={() => navigate('/settings')}
+            className={`w-full flex items-center gap-3 px-2.5 py-1.5 rounded-md text-sm text-ink-muted hover:bg-surface-hover hover:text-ink transition-colors ${!sidebarOpen && 'justify-center'}`}
+          >
+            <Settings size={17} className="flex-shrink-0" />
+            {sidebarOpen && <span>Configurações</span>}
+          </button>
+
+          <button
+            onClick={() => navigate('/billing')}
+            className={`w-full flex items-center gap-3 px-2.5 py-1.5 rounded-md text-sm text-ink-muted hover:bg-surface-hover hover:text-ink transition-colors ${!sidebarOpen && 'justify-center'}`}
+          >
+            <CreditCard size={17} className="flex-shrink-0" />
+            {sidebarOpen && <span>Assinatura</span>}
+          </button>
+
           <button
             onClick={toggleTheme}
             className={`w-full flex items-center gap-3 px-2.5 py-1.5 rounded-md text-sm text-ink-muted hover:bg-surface-hover hover:text-ink transition-colors ${!sidebarOpen && 'justify-center'}`}

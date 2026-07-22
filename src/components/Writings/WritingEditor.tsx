@@ -2,19 +2,30 @@ import { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
+import { Table } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import ScriptureCitationNode from './citation/ScriptureCitationNode';
 import {
   Save, Download, Printer, Bold, Italic, Underline as UnderlineIcon,
   AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered,
-  Undo, Redo, Loader2, ChevronDown, FileText, Book, Calendar, Clock,
+  Undo, Redo, Loader2, ChevronDown, FileText, Book, Calendar, Clock, Sparkles,
+  Table as TableIcon, Trash2,
 } from 'lucide-react';
-import type { MockSermon } from '../../mocks/sermonsMockData';
-import { exportSermonToDocx } from './export/toDocx';
-import { exportSermonToPdf } from './export/toPdf';
+import { useDispatch } from 'react-redux';
+import type { Writing } from '../../types/writing.types';
+import { WRITING_TYPE_LABELS } from '../../types/writing.types';
+import { exportWritingToDocx } from './export/toDocx';
+import { exportWritingToPdf } from './export/toPdf';
+import type { AppDispatch } from '../../store';
+import { openCaleb } from '../../feature/caleb';
+import { useCalebChat } from '../../feature/caleb/useCalebChat';
 
-interface SermonEditorProps {
-  sermon: MockSermon;
-  onUpdateSermon: (patch: Partial<MockSermon>) => void;
+interface WritingEditorProps {
+  writing: Writing;
+  onUpdateWriting: (patch: Partial<Writing>) => void;
   onSave: () => void;
   submitting: boolean;
 }
@@ -41,7 +52,7 @@ const headingSelectValue = (editor: ReturnType<typeof useEditor>) => {
 
 const Divider = () => <div className="w-px h-5 bg-border mx-1.5 flex-shrink-0" />;
 
-const SermonEditor: React.FC<SermonEditorProps> = ({ sermon, onUpdateSermon, onSave, submitting }) => {
+const WritingEditor: React.FC<WritingEditorProps> = ({ writing, onUpdateWriting, onSave, submitting }) => {
   const [fontSize, setFontSize] = useState(16);
   const [fontFamily, setFontFamily] = useState('Arial');
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
@@ -49,27 +60,51 @@ const SermonEditor: React.FC<SermonEditorProps> = ({ sermon, onUpdateSermon, onS
 
   const paperRef = useRef<HTMLDivElement>(null);
   const downloadMenuRef = useRef<HTMLDivElement>(null);
-  const currentSermonId = useRef<number | null>(null);
+  const currentWritingId = useRef<string | null>(null);
+
+  const dispatch = useDispatch<AppDispatch>();
+  const { send: sendToCaleb } = useCalebChat();
+
+  const handleAskCaleb = () => {
+    const plainText = (writing.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const excerpt = plainText.slice(0, 2000);
+
+    const context = {
+      kind: 'writing' as const,
+      id: writing.id,
+      label: writing.title || 'Escrito sem título',
+      interactionType: 'application' as const,
+      promptPrefix: `Título: ${writing.title}\nTipo: ${WRITING_TYPE_LABELS[writing.type]}\n\n${excerpt}`,
+    };
+
+    dispatch(openCaleb(context));
+    sendToCaleb('Sugira aplicações práticas para este texto.', context);
+  };
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Underline,
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
       ScriptureCitationNode,
     ],
-    content: sermon.content || '<p></p>',
+    content: writing.content || '<p></p>',
     onUpdate: ({ editor }) => {
-      onUpdateSermon({ content: editor.getHTML() });
+      onUpdateWriting({ content: editor.getHTML() });
     },
   });
 
-  // Reload editor content only when switching to a different sermon (not on every keystroke)
+  // Reload editor content only when switching to a different writing (not on every keystroke)
   useEffect(() => {
     if (!editor) return;
-    if (currentSermonId.current === sermon.id) return;
-    currentSermonId.current = sermon.id;
-    editor.commands.setContent(sermon.content || '<p></p>');
-  }, [editor, sermon.id, sermon.content]);
+    if (currentWritingId.current === writing.id) return;
+    currentWritingId.current = writing.id;
+    editor.commands.setContent(writing.content || '<p></p>');
+  }, [editor, writing.id, writing.content]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -112,13 +147,13 @@ const SermonEditor: React.FC<SermonEditorProps> = ({ sermon, onUpdateSermon, onS
     setExporting(true);
     try {
       if (format === 'docx') {
-        await exportSermonToDocx(sermon, editor.getHTML(), { fontFamily, fontSize });
+        await exportWritingToDocx(writing, editor.getHTML(), { fontFamily, fontSize });
       } else if (paperRef.current) {
-        await exportSermonToPdf(paperRef.current, sermon.title);
+        await exportWritingToPdf(paperRef.current, writing.title);
       }
     } catch (error) {
-      console.error('Erro ao exportar sermão:', error);
-      alert('Erro ao exportar o sermão. Tente novamente.');
+      console.error('Erro ao exportar escrito:', error);
+      alert('Erro ao exportar o escrito. Tente novamente.');
     } finally {
       setExporting(false);
     }
@@ -199,6 +234,21 @@ const SermonEditor: React.FC<SermonEditorProps> = ({ sermon, onUpdateSermon, onS
 
         <Divider />
 
+        <button
+          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 2, withHeaderRow: true }).run()}
+          className={toolbarButtonClass(editor.isActive('table'))}
+          title="Inserir Tabela"
+        >
+          <TableIcon size={16} />
+        </button>
+        {editor.isActive('table') && (
+          <button onClick={() => editor.chain().focus().deleteTable().run()} className={toolbarButtonClass(false)} title="Excluir Tabela">
+            <Trash2 size={16} />
+          </button>
+        )}
+
+        <Divider />
+
         <button onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} className={toolbarButtonClass(false)} title="Desfazer">
           <Undo size={16} />
         </button>
@@ -207,6 +257,11 @@ const SermonEditor: React.FC<SermonEditorProps> = ({ sermon, onUpdateSermon, onS
         </button>
 
         <div className="flex-1" />
+
+        <button onClick={handleAskCaleb} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm text-accent hover:bg-accent-soft transition-colors flex-shrink-0" title="Perguntar ao Caleb">
+          <Sparkles size={15} />
+          <span>Caleb</span>
+        </button>
 
         <button onClick={onSave} disabled={submitting} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm text-ink-muted hover:bg-surface-hover transition-colors disabled:opacity-50 flex-shrink-0" title="Salvar">
           {submitting ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
@@ -246,31 +301,40 @@ const SermonEditor: React.FC<SermonEditorProps> = ({ sermon, onUpdateSermon, onS
         <div className="max-w-[720px] mx-auto">
           <div
             ref={paperRef}
-            className="sermon-print-area bg-surface border border-border rounded-xl px-14 py-12"
+            className="writing-print-area bg-surface border border-border rounded-xl px-14 py-12"
             style={{ fontSize: `${fontSize}px`, fontFamily }}
           >
             {/* Document Header */}
             <input
-              value={sermon.title}
-              onChange={(e) => onUpdateSermon({ title: e.target.value })}
-              placeholder="Título do sermão"
+              value={writing.title}
+              onChange={(e) => onUpdateWriting({ title: e.target.value })}
+              placeholder="Título do escrito"
               className="w-full text-3xl font-medium text-ink mb-3 bg-transparent border-none outline-none focus:ring-0 p-0"
             />
 
             <div className="flex items-center gap-3 mb-8 flex-wrap">
+              <select
+                value={writing.type}
+                onChange={(e) => onUpdateWriting({ type: e.target.value as Writing['type'] })}
+                className="bg-accent-soft text-accent-hover dark:text-ink text-xs font-medium px-2.5 py-1 rounded-md border-none outline-none cursor-pointer"
+              >
+                {Object.entries(WRITING_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
               <span className="inline-flex items-center gap-1.5 bg-accent-soft text-accent-hover dark:text-ink text-xs font-medium px-2.5 py-1 rounded-md">
                 <Book size={13} />
                 <input
-                  value={sermon.scripture_reference}
-                  onChange={(e) => onUpdateSermon({ scripture_reference: e.target.value })}
+                  value={writing.base_text}
+                  onChange={(e) => onUpdateWriting({ base_text: e.target.value })}
                   placeholder="Referência bíblica"
                   className="bg-transparent border-none outline-none focus:ring-0 p-0 text-xs font-medium min-w-0"
-                  style={{ width: `${Math.max(sermon.scripture_reference?.length || 16, 16)}ch` }}
+                  style={{ width: `${Math.max(writing.base_text?.length || 16, 16)}ch` }}
                 />
               </span>
               <span className="flex items-center gap-1 text-xs text-ink-faint">
                 <Calendar size={13} />
-                {sermon.sermon_date ? new Date(sermon.sermon_date).toLocaleDateString('pt-BR') : '-'}
+                {writing.preached_date ? new Date(writing.preached_date).toLocaleDateString('pt-BR') : '-'}
               </span>
               <span className="flex items-center gap-1 text-xs text-ink-faint">
                 <Clock size={13} />
@@ -289,4 +353,4 @@ const SermonEditor: React.FC<SermonEditorProps> = ({ sermon, onUpdateSermon, onS
   );
 };
 
-export default SermonEditor;
+export default WritingEditor;

@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { Bell, Calendar, Check, Clock, DollarSign, Heart, Search, Settings, Target, Trash2, Users } from "lucide-react";
+import { Bell, Calendar, Check, Clock, DollarSign, Heart, Search, Settings, Sparkles, Target, Trash2, Users } from "lucide-react";
+import { useDispatch } from "react-redux";
 import { useAuth } from "../../../context/AuthContext";
+import type { AppDispatch } from "../../../store";
+import { openCaleb } from "../../../feature/caleb";
 
 interface Notification {
   id: number;
@@ -21,6 +24,7 @@ const toneClasses: Record<Notification['tone'], string> = {
 };
 
 const Header = () => {
+    const dispatch = useDispatch<AppDispatch>();
     const { user } = useAuth();
     const firstName = user?.first_name || user?.username || '';
     const today = new Date().toLocaleDateString('pt-BR', {
@@ -53,6 +57,15 @@ const Header = () => {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Caleb */}
+              <button
+                onClick={() => dispatch(openCaleb())}
+                title="Perguntar ao Caleb"
+                className="p-2 hover:bg-accent-soft rounded-md transition-colors text-accent hover:text-accent-hover"
+              >
+                <Sparkles size={18} />
+              </button>
+
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-ink-faint" size={16} />

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { Award, Calendar, Camera, FileText, User, Users } from "lucide-react"
 import Sidebar from "../Sidebar"
 import Header from "../Header"
+import CalebPanel from "../../Caleb/CalebPanel"
 import { setShowProfile } from "../../../feature/ShowProfile"
 import type { AppDispatch, RootState } from "../../../store"
 import { useAuth } from "../../../context/AuthContext"
@@ -39,6 +40,9 @@ const MainLayout = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Caleb — painel global do copiloto de IA */}
+      <CalebPanel />
 
       {/* Profile Modal */}
       <Modal open={showProfile} onClose={handleClose} title="Meu Perfil" maxWidth="max-w-2xl">

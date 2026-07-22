@@ -6,7 +6,7 @@ const PAGE_WIDTH_MM = 210;
 const PAGE_HEIGHT_MM = 297;
 const RENDER_SCALE = 2;
 
-export async function exportSermonToPdf(element: HTMLElement, title: string): Promise<void> {
+export async function exportWritingToPdf(element: HTMLElement, title: string): Promise<void> {
   const canvas = await html2canvas(element, {
     scale: RENDER_SCALE,
     useCORS: true,
