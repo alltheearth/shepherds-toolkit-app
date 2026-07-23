@@ -50,13 +50,30 @@ const Writings = () => {
       const writingsData: Writing[] = response.data.results || response.data || [];
       setWritings(writingsData);
       if (writingsData.length > 0) {
-        setSelectedWriting((prev) => prev ?? writingsData[0]);
+        selectWriting(writingsData[0]);
       }
     } catch (error) {
       console.error('Erro ao carregar escritos:', error);
       alert('Erro ao carregar escritos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // The list endpoint returns a simplified payload without `content` (for
+  // performance), so opening a writing needs a follow-up fetch of the full
+  // detail record — otherwise the editor shows the title with no content.
+  // WritingEditor only reloads its content when `writing.id` changes, so we
+  // fetch first and set state once rather than setting the content-less
+  // list item first (which would share the same id and never trigger a
+  // second reload).
+  const selectWriting = async (writing: Writing) => {
+    try {
+      const response = await api.get(`/writings/${writing.id}/`);
+      setSelectedWriting(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar conteúdo do escrito:', error);
+      setSelectedWriting(writing);
     }
   };
 
@@ -129,7 +146,11 @@ const Writings = () => {
       const remaining = writings.filter((w) => w.id !== writingToDelete.id);
       setWritings(remaining);
       if (selectedWriting?.id === writingToDelete.id) {
-        setSelectedWriting(remaining[0] ?? null);
+        if (remaining[0]) {
+          selectWriting(remaining[0]);
+        } else {
+          setSelectedWriting(null);
+        }
       }
       setShowDeleteModal(false);
       setWritingToDelete(null);
@@ -269,7 +290,7 @@ const Writings = () => {
                     <Card
                       key={writing.id}
                       hoverable
-                      onClick={() => setSelectedWriting(writing)}
+                      onClick={() => selectWriting(writing)}
                       className={`p-3 ${selectedWriting?.id === writing.id ? 'border-accent bg-accent-soft/30' : ''}`}
                     >
                       <div className="flex items-start justify-between mb-1.5">
