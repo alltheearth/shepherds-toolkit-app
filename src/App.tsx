@@ -18,6 +18,7 @@ import Finances from './components/Finances';
 import Prayer from './components/Prayer';
 import Library from './components/Library';
 import Auth from './components/Auth';
+import ConnectKoinonia from './components/ConnectKoinonia';
 import MainLayout from './components/layout/MainLayout';
 import ReadingPlan from './components/ReadingPlan';
 import DebugWritingAPI from './components/WritingAPITest';
@@ -37,6 +38,10 @@ function App() {
             <Route path="login" element={<Auth />} />
             {/* <Route path="register" element={<Register />} /> */}
           </Route>
+
+          {/* Consentimento do mini-OAuth interno com o koinonia-app — cuida
+              do próprio login, por isso fica fora do bloco protegido */}
+          <Route path="/connect/koinonia" element={<ConnectKoinonia />} />
 
           {/* Rota Pública da Bíblia (sem sidebar) */}
           {/* <Route path="/bible" element={<Bible />} /> */}
